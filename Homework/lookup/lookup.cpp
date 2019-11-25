@@ -1,6 +1,7 @@
 #include "router.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <fstream>
 
 #include <vector>
 using namespace std;
@@ -66,7 +67,8 @@ public:
 
 	void insert(Char** word, Info* iinfo) { // word needs to end up with nullptr as a sign
 		if (word[0] == nullptr) {
-			info = iinfo; // will overwrite previous info
+			if (info == nullptr) info = new Info;
+			*info = *iinfo; // will overwrite previous info
 			return;
 		}
 		if (next == nullptr) next = new Trie[size()];
@@ -77,27 +79,23 @@ public:
 	 * @return
 	 * 0 - matched and deleted
 	 * 1 - this node is clear
-	 * -1 - not matched due to non-null rinfo with null info
-	 * -2 - not matched due to unequal rinfo and info
+	 * -1 - not matched due to null info
+	 * -2 - NOT IN USE
 	 * -3 - ERROR not matched due to no children
 	 * -4 - recursively not matched
 	*/
-	int remove(Char** word, Info* rinfo = nullptr) { // if rinfo == nullptr, ignore it
+	int remove(Char** word) {
 		if (word[0] == nullptr) {
-			if (rinfo != nullptr && info != nullptr && *rinfo == *info) {
+			if (info != nullptr) {
+				delete info;
 				info = nullptr;
 				if (next == nullptr) return 1;
 				else return 0;
 			}
-			else if (rinfo == nullptr) {
-				info = nullptr;
-				return 0;
-			}
-			else if (info == nullptr) return -1;
-			else return -2;
+			else return -1;
 		}
 		if (next == nullptr) return -3;
-		int ans = next[word[0]->seq()].remove(&word[1], rinfo);
+		int ans = next[word[0]->seq()].remove(&word[1]);
 		if (ans == 1) {
 			for (int i = 0; i < size(); i++) {
 				if (!next[i].empty()) return 0;
@@ -109,27 +107,6 @@ public:
 		}
 		else if (ans == 0) return 0;
 		else return -4;
-	}
-
-	/**
-	 * @param ans collect all matched info
-	 *     [NOTE] ans <- vec [long ... short] match ONLY WHEN word totally matched
-	 * @return true if this call found ans, false if not
-	 */
-	bool lookup(Char** word, vector<const Info*>& ans) {
-		if (word[0] == nullptr) {
-			if (info != nullptr) {
-				ans.push_back(info);
-				return true;
-			}
-			else return false;
-		}
-		if (next == nullptr) return false;
-		if (next[word[0]->seq()].lookup(&word[1], ans)) {
-			if (info != nullptr) ans.push_back(info);
-			return true;
-		}
-		return false;
 	}
 
 	/**
@@ -145,11 +122,11 @@ public:
 			}
 			else return false;
 		}
-		if (next == nullptr) return false;
 		
 		bool tflag = true;
 		if (info != nullptr) ans.push_back(info);
 		else tflag = false;
+		if (next == nullptr) return tflag;
 		return next[word[0]->seq()].lookup_pre(&word[1], ans) || tflag;
 	}
 };
@@ -191,18 +168,18 @@ void mk_word(RoutingTableEntry& info, Bin**& ans) { // ans contains both addr an
 }
 
 void mk_word(uint32_t& info, Bin**& ans) {
-    if (ans == nullptr) ans = new Bin*[32 + 1];
-    uint8_t ip[4];
-    ip[0] = info & 0xff;
-    ip[1] = (info & 0xff00) >> 8;
-    ip[2] = (info & 0xff0000) >> 16;
-    ip[3] = (info & 0xff000000) >> 24;
-    
-    for (uint32_t j = 0; j < 32; j++) {
-        ans[j] = new Bin;
-        ans[j]->bin = ((ip[j / 8] & (0x1 << (7 - j % 8))) == 0) ? 0 : 1;
-    }
-    ans[32] = nullptr;
+	if (ans == nullptr) ans = new Bin*[32 + 1];
+	uint8_t ip[4];
+	ip[0] = info & 0xff;
+	ip[1] = (info & 0xff00) >> 8;
+	ip[2] = (info & 0xff0000) >> 16;
+	ip[3] = (info & 0xff000000) >> 24;
+
+	for (uint32_t j = 0; j < 32; j++) {
+		ans[j] = new Bin;
+		ans[j]->bin = ((ip[j / 8] & (0x1 << (7 - j % 8))) == 0) ? 0 : 1;
+	}
+	ans[32] = nullptr;
 }
 
 Trie<Bin, RoutingTableEntry> rtable(nullptr);
@@ -219,7 +196,7 @@ void update(bool insert, RoutingTableEntry entry) {
     Bin** ans = nullptr;
     mk_word(entry, ans);
     if (insert) rtable.insert(ans, &entry);
-    else rtable.remove(ans, &entry);
+    else rtable.remove(ans);
 }
 
 /**
