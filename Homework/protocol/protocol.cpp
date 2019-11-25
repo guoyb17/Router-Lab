@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define UDP_HEAD 8
+#define RIP_HEAD 4
+#define RIP_ENTRY_LENGTH 20
+
 /*
   在头文件 rip.h 中定义了如下的结构体：
   #define RIP_MAX_ENTRY 25
@@ -44,8 +48,87 @@
  * Mask 的二进制是不是连续的 1 与连续的 0 组成等等。
  */
 bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output) {
-  // TODO:
-  return false;
+  uint32_t totalLength = (packet[2] << 8) + packet[3];
+  if (totalLength > len) return false;
+  uint8_t headerLength = (packet[0] & 0xf) << 2;
+
+  // check command
+  uint8_t command = packet[headerLength + UDP_HEAD];
+  if (command != 1 && command != 2) return false;
+  output->command = command;
+  uint8_t tmp = packet[headerLength + UDP_HEAD + 1];
+  if (tmp != 2) return false;
+
+  // Check ZERO
+  tmp = packet[headerLength + UDP_HEAD + 2];
+  if (tmp != 0) return false;
+  tmp = packet[headerLength + UDP_HEAD + 3];
+  if (tmp != 0) return false;
+
+  uint32_t numEntries = (len - headerLength - UDP_HEAD - RIP_HEAD) / RIP_ENTRY_LENGTH;
+  output->numEntries = numEntries;
+
+  for (uint32_t entry = 0; entry < numEntries; entry++) {
+    // check address family
+    tmp = packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH];
+    if (tmp != 0) return false;
+    tmp = packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 1];
+    if (!((command == 1 && tmp == 0) || (command == 2 && tmp == 2))) return false;
+
+    // check tag
+    tmp = packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 2];
+    if (tmp != 0) return false;
+    tmp = packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 3];
+    if (tmp != 0) return false;
+
+    // check metric
+    uint32_t metricLittle
+    = ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 16] << 24)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 17] << 16)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 18] << 8)
+    + (uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 19];
+    uint32_t metricBig
+    = ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 19] << 24)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 18] << 16)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 17] << 8)
+    + (uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 16];
+    if (!(1 <= metricLittle && metricLittle <= 16)) return false;
+    output->entries[entry].metric = metricBig;
+
+    // check mask
+    uint32_t mask
+    = ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 11] << 24)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 10] << 16)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 9] << 8)
+    + (uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 8];
+    bool is1 = true;
+    uint8_t checkBit = 0;
+    while(is1 && (checkBit < 32)) {
+      if ((mask & (((uint32_t)1) << checkBit)) == 0) is1 = false;
+      else checkBit++;
+    }
+    while(!is1 && (checkBit < 32)) {
+      if ((mask & (((uint32_t)1) << checkBit)) != 0) return false;
+      else checkBit++;
+    }
+    output->entries[entry].mask = mask;
+
+    uint32_t addr
+    = ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 7] << 24)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 6] << 16)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 5] << 8)
+    + (uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 4];
+    output->entries[entry].addr = addr;
+
+    uint32_t nexthop
+    = ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 15] << 24)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 14] << 16)
+    + ((uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 13] << 8)
+    + (uint32_t)packet[headerLength + UDP_HEAD + RIP_HEAD + entry * RIP_ENTRY_LENGTH + 12];
+    output->entries[entry].nexthop = nexthop;
+  }
+
+  return true;
 }
 
 /**
@@ -59,6 +142,40 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output) {
  * 需要注意一些没有保存在 RipPacket 结构体内的数据的填写。
  */
 uint32_t assemble(const RipPacket *rip, uint8_t *buffer) {
-  // TODO:
-  return 0;
+  buffer[0] = rip->command;
+  buffer[1] = 0x02;
+  buffer[2] = 0x00;
+  buffer[3] = 0x00;
+  uint32_t ans = RIP_HEAD;
+
+  for (uint32_t entry = 0; entry < rip->numEntries; entry++) {
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH] = 0x00;
+    if (rip->command == 1) buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 1] = 0x00;
+    else if (rip->command == 2) buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 1] = 0x02;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 2] = 0x00;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 3] = 0x00;
+
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 7] = (rip->entries[entry].addr & 0xff000000) >> 24;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 6] = (rip->entries[entry].addr & 0x00ff0000) >> 16;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 5] = (rip->entries[entry].addr & 0x0000ff00) >> 8;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 4] = rip->entries[entry].addr & 0x000000ff;
+
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 11] = (rip->entries[entry].mask & 0xff000000) >> 24;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 10] = (rip->entries[entry].mask & 0x00ff0000) >> 16;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 9] = (rip->entries[entry].mask & 0x0000ff00) >> 8;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 8] = rip->entries[entry].mask & 0x000000ff;
+
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 15] = (rip->entries[entry].nexthop & 0xff000000) >> 24;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 14] = (rip->entries[entry].nexthop & 0x00ff0000) >> 16;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 13] = (rip->entries[entry].nexthop & 0x0000ff00) >> 8;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 12] = rip->entries[entry].nexthop & 0x000000ff;
+
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 19] = (rip->entries[entry].metric & 0xff000000) >> 24;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 18] = (rip->entries[entry].metric & 0x00ff0000) >> 16;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 17] = (rip->entries[entry].metric & 0x0000ff00) >> 8;
+    buffer[RIP_HEAD + entry * RIP_ENTRY_LENGTH + 16] = rip->entries[entry].metric & 0x000000ff;
+
+    ans += RIP_ENTRY_LENGTH;
+  }
+  return ans;
 }
