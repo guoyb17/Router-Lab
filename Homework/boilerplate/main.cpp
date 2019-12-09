@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     // 获取当前时间，处理定时任务
     uint64_t time = HAL_GetTicks();
     if (time > last_time + 30 * 1000) {
-      // TODO: What to do?
+      // What to do?
       // send complete routing table to every interface
       // ref. RFC2453 3.8
       // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
@@ -105,8 +105,9 @@ int main(int argc, char *argv[]) {
       printf("Invalid IP Checksum\n");
       continue;
     }
-    in_addr_t src_addr, dst_addr;
-    // extract src_addr and dst_addr from packet
+    in_addr_t src_addr = (packet[12] << 24) + (packet[13] << 16) + (packet[14] << 8) + packet[15],
+              dst_addr = (packet[16] << 24) + (packet[17] << 16) + (packet[18] << 8) + packet[19];
+    // TODO: extract src_addr and dst_addr from packet [x]
     // big endian
 
     // 2. check whether dst is me
@@ -117,7 +118,11 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    // TODO: Handle rip multicast address(224.0.0.9)?
+    in_addr_t multicast_addr = 0xE0000009;
+    if (memcmp(&dst_addr, &multicast_addr, sizeof(in_addr_t)) == 0) {
+      dst_is_me = true;
+    }
+    // TODO: Handle rip multicast address(224.0.0.9)? [x]
 
     if (dst_is_me) {
       // 3a.1
@@ -128,7 +133,9 @@ int main(int argc, char *argv[]) {
           // 3a.3 request, ref. RFC2453 3.9.1
           // only need to respond to whole table requests in the lab
           RipPacket resp;
-          // TODO: fill resp
+          // TODO: fill resp [ ]
+          resp.command = rip.command;
+          
           // assemble
           // IP
           output[0] = 0x45;
@@ -150,7 +157,7 @@ int main(int argc, char *argv[]) {
           // new metric = ?
           // update metric, if_index, nexthop
           // what is missing from RoutingTableEntry?
-          // TODO: use query and update
+          // TODO: use query and update [ ]
           // triggered updates? ref. RFC2453 3.10.1
         }
       }
@@ -171,7 +178,7 @@ int main(int argc, char *argv[]) {
           memcpy(output, packet, res);
           // update ttl and checksum
           forward(output, res);
-          // TODO: you might want to check ttl=0 case
+          // TODO: you might want to check ttl=0 case [ ]
           HAL_SendIPPacket(dest_if, output, res, dest_mac);
         } else {
           // not found

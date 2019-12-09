@@ -129,6 +129,22 @@ public:
 		if (next == nullptr) return tflag;
 		return next[word[0]->seq()].lookup_pre(&word[1], ans) || tflag;
 	}
+
+	/**
+	 * @param ans collect all info and return
+	 */
+	void get_all(vector<Info*>& ans) {
+		if (info != nullptr) {
+			ans.push_back(info);
+		}
+		if (next != nullptr) {
+			for (int i = 0; i < size(); i++) {
+				if (!next[i].empty()) {
+					next[i].get_all(ans);
+				}
+			}
+		}
+	}
 };
 
 struct Bin {
