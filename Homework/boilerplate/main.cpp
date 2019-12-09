@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   while (1) {
     uint64_t time = HAL_GetTicks();
     if (time > last_time + 30 * 1000) {
-      // What to do?
+      // TODO: What to do?
       printf("Timer\n");
     }
 
