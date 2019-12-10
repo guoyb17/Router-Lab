@@ -5,10 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern void update(bool insert, RoutingTableEntry entry);
 extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index);
+extern void getTable(std::vector<RoutingTableEntry*>& ans);
 extern bool forward(uint8_t *packet, size_t len);
 extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
@@ -41,7 +43,8 @@ int main(int argc, char *argv[]) {
         .addr = addrs[i] & 0x00FFFFFF, // big endian
         .len = 24,        // small endian
         .if_index = i,    // small endian
-        .nexthop = 0      // big endian, means direct
+        .nexthop = 0,     // big endian, means direct
+        .metric = 0       // small endian
     };
     update(true, entry);
   }
@@ -107,6 +110,7 @@ int main(int argc, char *argv[]) {
     }
     in_addr_t src_addr = (packet[12] << 24) + (packet[13] << 16) + (packet[14] << 8) + packet[15],
               dst_addr = (packet[16] << 24) + (packet[17] << 16) + (packet[18] << 8) + packet[19];
+    uint16_t src_port = (packet[20] << 8) + packet[21];
     // TODO: extract src_addr and dst_addr from packet [x]
     // big endian
 
@@ -132,25 +136,82 @@ int main(int argc, char *argv[]) {
         if (rip.command == 1) {
           // 3a.3 request, ref. RFC2453 3.9.1
           // only need to respond to whole table requests in the lab
-          RipPacket resp;
-          // TODO: fill resp [ ]
-          resp.command = rip.command;
-          
-          // assemble
-          // IP
-          output[0] = 0x45;
-          // ...
-          // UDP
-          // port = 520
-          output[20] = 0x02;
-          output[21] = 0x08;
-          // ...
-          // RIP
-          uint32_t rip_len = assemble(&resp, &output[20 + 8]);
-          // checksum calculation for ip and udp
-          // if you don't want to calculate udp checksum, set it to zero
-          // send it back
-          HAL_SendIPPacket(if_index, output, rip_len + 20 + 8, src_mac);
+          // TODO: fill resp [x]
+          std::vector<RoutingTableEntry*> ans;
+          getTable(ans);
+          int k_total = ans.size() / RIP_MAX_ENTRY;
+          for (int k = 0; k <= k_total; k++) {
+            RipPacket resp;
+            resp.command = rip.command;
+            resp.numEntries = 0;
+            for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
+              resp.entries[resp.numEntries].addr = ans[i]->addr;
+              resp.entries[resp.numEntries].mask = (1 << (ans[i]->len + 1)) - 1;
+              resp.entries[resp.numEntries].metric = ans[i]->metric;
+              resp.entries[resp.numEntries].nexthop = ans[i]->nexthop;
+              resp.numEntries++;
+            }
+            // assemble
+            // IP
+            output[0] = 0x45;
+            output[1] = 0x0;
+            // TODO: length of IP: output 2, 3 [x]
+            output[4] = 0;
+            output[5] = 0;
+            output[6] = 0;
+            output[7] = 0;
+            output[8] = 0x1;
+            // UDP
+            output[9] = 0x21;
+            // TODO: checksum of IP: output 10, 11 [x]
+            output[12] = dst_addr >> 24;
+            output[13] = (dst_addr >> 16) & 0xff;
+            output[14] = (dst_addr >> 8) & 0xff;
+            output[15] = dst_addr & 0xff;
+            output[16] = src_addr >> 24;
+            output[17] = (src_addr >> 16) & 0xff;
+            output[18] = (src_addr >> 8) & 0xff;
+            output[19] = src_addr & 0xff;
+            // port = 520
+            output[20] = 0x02;
+            output[21] = 0x08;
+            output[22] = src_port >> 8;
+            output[23] = src_port & 0xff;
+            // TODO: length of UDP: output 24, 25 [x]
+            // TODO: checksum of UDP: output 26, 27 [x]
+            // RIP
+            uint32_t rip_len = assemble(&resp, &output[20 + 8]);
+
+            uint16_t udp_len = rip_len + 8;
+            output[24] = udp_len >> 8;
+            output[25] = udp_len & 0xff;
+
+            uint16_t ip_len = rip_len + 20 + 8;
+            output[2] = ip_len >> 8;
+            output[3] = ip_len & 0xff;
+
+            // checksum calculation for ip and udp
+            // if you don't want to calculate udp checksum, set it to zero
+            output[26] = 0;
+            output[27] = 0;
+            uint16_t header_len = 20;
+            uint32_t cnt = 0;
+            for (uint16_t i = 0; i + 1 < header_len; i += 2) {
+              uint16_t tmp = i == 10 ? 0 : packet[i];
+              tmp = tmp << 8;
+              tmp += i == 10 ? 0 : packet[i + 1];
+              cnt += tmp;
+              while (0xffff < cnt) {
+                uint16_t tmps = cnt >> 16;
+                cnt = (cnt & 0xffff) + tmps;
+              }
+            }
+            cnt = ~cnt & 0xffff;
+            output[10] = (cnt >> 8) & 0xff;
+            output[11] = cnt & 0xff;
+            // send it back
+            HAL_SendIPPacket(if_index, output, ip_len, src_mac);
+          }
         } else {
           // 3a.2 response, ref. RFC2453 3.9.2
           // update routing table
@@ -178,7 +239,22 @@ int main(int argc, char *argv[]) {
           memcpy(output, packet, res);
           // update ttl and checksum
           forward(output, res);
-          // TODO: you might want to check ttl=0 case [ ]
+          // TODO: you might want to check ttl=0 case [x]
+          if (output[8] == 0) {
+            output[20] = 11;
+            output[21] = 0;
+            // TODO: checksum of ICMP: output 22, 23 [x]
+            uint16_t icmp_checksum = 11;
+            icmp_checksum = ~icmp_checksum;
+            output[22] = icmp_checksum >> 8;
+            output[23] = icmp_checksum & 0xff;
+            output[24] = 0;
+            output[25] = 0;
+            output[26] = 0;
+            output[27] = 0;
+            for (int j = 8; j < 64; j++) output[20 + j] = 0;
+            res = 20 + 64;
+          }
           HAL_SendIPPacket(dest_if, output, res, dest_mac);
         } else {
           // not found
@@ -186,8 +262,8 @@ int main(int argc, char *argv[]) {
           printf("ARP not found for %x\n", nexthop);
         }
       } else {
-        // not found
-        // optionally you can send ICMP Host Unreachable
+        // not found: ICMP Destination Network Unreachable
+        // TODO: optionally you can send ICMP Host Unreachable [ ]
         printf("IP not found for %x\n", src_addr);
       }
     }

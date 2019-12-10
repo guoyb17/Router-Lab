@@ -13,6 +13,7 @@ using namespace std;
     uint32_t len; // 小端序，前缀长度
     uint32_t if_index; // 小端序，出端口编号
     uint32_t nexthop; // 大端序，下一跳的 IPv4 地址
+	uint32_t metric; // 小端序，到下一路由器的权值
   } RoutingTableEntry;
 
   约定 addr 和 nexthop 以 **大端序** 存储。
@@ -165,6 +166,7 @@ bool operator==(const RoutingTableEntry& a, const RoutingTableEntry& b) {
     if (a.if_index != b.if_index) return false;
     if (a.len != b.len) return false;
     if (a.nexthop != b.nexthop) return false;
+	if (a.metric != b.metric) return false;
     return true;
 }
 
@@ -232,4 +234,12 @@ bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index) {
     *nexthop = value.nexthop;
     *if_index = value.if_index;
     return true;
+}
+
+/**
+ * @brief 获取当前的完整路由表
+ * @param ans 返回完整路由表
+ */
+void getTable(vector<RoutingTableEntry*>& ans) {
+	rtable.get_all(ans);
 }
