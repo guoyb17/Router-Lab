@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
           int k_total = ans.size() / RIP_MAX_ENTRY;
           for (int k = 0; k <= k_total; k++) {
             RipPacket resp;
-            resp.command = rip.command;
+            resp.command = 2;
             resp.numEntries = 0;
             for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
               resp.entries[resp.numEntries].addr = ans[i]->addr;
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
           // update metric, if_index, nexthop
           // what is missing from RoutingTableEntry?
           // TODO: use query and update [ ]
-          // triggered updates? ref. RFC2453 3.10.1
+          // TODO: triggered updates? ref. RFC2453 3.10.1 [ ]
         }
       }
     } else {
@@ -254,8 +254,31 @@ int main(int argc, char *argv[]) {
             output[27] = 0;
             for (int j = 8; j < 64; j++) output[20 + j] = 0;
             res = 20 + 64;
+            output[2] = (res >> 8) & 0xff;
+            output[3] = res & 0xff;
+            output[8] = 0xff;
+            for (int i = 0; i < 4; i++) {
+              uint8_t tmp = output[12 + i];
+              output[12 + i] = output[16 + i];
+              output[16 + i] = tmp;
+            }
+
+            uint32_t cnt = 0;
+            for (uint16_t i = 0; i + 1 < 20; i += 2) {
+              uint16_t tmp = output[i];
+              tmp = tmp << 8;
+              tmp += output[i + 1];
+              cnt += tmp;
+              while (0xffff < cnt) {
+                uint16_t tmps = cnt >> 16;
+                cnt = (cnt & 0xffff) + tmps;
+              }
+            }
+            uint16_t cnt16 = ~cnt & 0xffff;
+            output[10] = cnt16 >> 8;
+            output[11] = cnt16 & 0xff;
           }
-          HAL_SendIPPacket(dest_if, output, res, dest_mac);
+          HAL_SendIPPacket(dest_if, output, res, src_mac);
         } else {
           // not found
           // you can drop it
@@ -263,7 +286,45 @@ int main(int argc, char *argv[]) {
         }
       } else {
         // not found: ICMP Destination Network Unreachable
-        // TODO: optionally you can send ICMP Host Unreachable [ ]
+        memcpy(output, packet, res);
+        // TODO: optionally you can send ICMP Host Unreachable [x]
+        output[20] = 3;
+        output[21] = 1;
+        uint16_t icmp_checksum = 4;
+        icmp_checksum = ~icmp_checksum;
+        output[22] = icmp_checksum >> 8;
+        output[23] = icmp_checksum & 0xff;
+        output[24] = 0;
+        output[25] = 0;
+        output[26] = 0;
+        output[27] = 0;
+        for (int j = 8; j < 64; j++) output[20 + j] = 0;
+        res = 20 + 64;
+        output[2] = (res >> 8) & 0xff;
+        output[3] = res & 0xff;
+        output[8] = 0xff;
+        for (int i = 0; i < 4; i++) {
+          uint8_t tmp = output[12 + i];
+          output[12 + i] = output[16 + i];
+          output[16 + i] = tmp;
+        }
+
+        uint32_t cnt = 0;
+        for (uint16_t i = 0; i + 1 < 20; i += 2) {
+          uint16_t tmp = output[i];
+          tmp = tmp << 8;
+          tmp += output[i + 1];
+          cnt += tmp;
+          while (0xffff < cnt) {
+            uint16_t tmps = cnt >> 16;
+            cnt = (cnt & 0xffff) + tmps;
+          }
+        }
+        uint16_t cnt16 = ~cnt & 0xffff;
+        output[10] = cnt16 >> 8;
+        output[11] = cnt16 & 0xff;
+        HAL_SendIPPacket(dest_if, output, 20 + 64, src_mac);
+
         printf("IP not found for %x\n", src_addr);
       }
     }
