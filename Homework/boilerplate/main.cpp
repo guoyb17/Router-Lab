@@ -9,11 +9,17 @@
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern void update(bool insert, RoutingTableEntry entry);
-extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index);
+extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index, uint32_t* metric);
 extern void getTable(std::vector<RoutingTableEntry*>& ans);
 extern bool forward(uint8_t *packet, size_t len);
 extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
+#define METRIC_COST 1
+#define METRIC_INF 16
+#define MULTICAST_IP 0x090000E0
+macaddr_t MULTICAST_MAC = { 0x09, 0x00, 0x00, 0x5E, 0x00, 0x01 };
+#define TIMEOUT 180
+#define GARBAGE_COLLECTION 120
 
 uint8_t packet[2048];
 uint8_t output[2048];
@@ -44,7 +50,8 @@ int main(int argc, char *argv[]) {
         .len = 24,        // small endian
         .if_index = i,    // small endian
         .nexthop = 0,     // big endian, means direct
-        .metric = 0       // small endian
+        .metric = 1,      // small endian
+        .timestamp = HAL_GetTicks()
     };
     update(true, entry);
   }
@@ -54,11 +61,95 @@ int main(int argc, char *argv[]) {
     // 获取当前时间，处理定时任务
     uint64_t time = HAL_GetTicks();
     if (time > last_time + 30 * 1000) {
-      // What to do?
+      // TODO: What to do? [x]
+      std::vector<RoutingTableEntry*> ans;
+      getTable(ans);
+      int k_total = ans.size() / RIP_MAX_ENTRY;
       // send complete routing table to every interface
+      for (uint32_t if_index = 0; if_index < N_IFACE_ON_BOARD; if_index++) {
+        for (int k = 0; k <= k_total; k++) {
+          RipPacket resp;
+          resp.command = 2;
+          resp.numEntries = 0;
+          for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
+            resp.entries[resp.numEntries].addr = ans[i]->addr;
+            resp.entries[resp.numEntries].mask = (1 << (ans[i]->len + 1)) - 1;
+            resp.entries[resp.numEntries].metric = ans[i]->metric;
+            resp.entries[resp.numEntries].nexthop = ans[i]->nexthop;
+            resp.numEntries++;
+          }
+          // assemble
+          // IP
+          output[0] = 0x45;
+          output[1] = 0x0;
+          output[4] = 0;
+          output[5] = 0;
+          output[6] = 0;
+          output[7] = 0;
+          output[8] = 0x1;
+          // UDP
+          output[9] = 0x21;
+          output[12] = addrs[if_index] >> 24;
+          output[13] = (addrs[if_index] >> 16) & 0xff;
+          output[14] = (addrs[if_index] >> 8) & 0xff;
+          output[15] = addrs[if_index] & 0xff;
+          output[16] = MULTICAST_IP >> 24;
+          output[17] = (MULTICAST_IP >> 16) & 0xff;
+          output[18] = (MULTICAST_IP >> 8) & 0xff;
+          output[19] = MULTICAST_IP & 0xff;
+          // port = 520
+          output[20] = 0x02;
+          output[21] = 0x08;
+          output[22] = 0x02; // TODO: ???
+          output[23] = 0x08;
+          // RIP
+          uint32_t rip_len = assemble(&resp, &output[20 + 8]);
+
+          uint16_t udp_len = rip_len + 8;
+          output[24] = udp_len >> 8;
+          output[25] = udp_len & 0xff;
+
+          uint16_t ip_len = rip_len + 20 + 8;
+          output[2] = ip_len >> 8;
+          output[3] = ip_len & 0xff;
+
+          // checksum calculation for ip and udp
+          // if you don't want to calculate udp checksum, set it to zero
+          output[26] = 0;
+          output[27] = 0;
+          uint16_t header_len = 20;
+          uint32_t cnt = 0;
+          for (uint16_t i = 0; i + 1 < header_len; i += 2) {
+            uint16_t tmp = i == 10 ? 0 : packet[i];
+            tmp = tmp << 8;
+            tmp += i == 10 ? 0 : packet[i + 1];
+            cnt += tmp;
+            while (0xffff < cnt) {
+              uint16_t tmps = cnt >> 16;
+              cnt = (cnt & 0xffff) + tmps;
+            }
+          }
+          cnt = ~cnt & 0xffff;
+          output[10] = (cnt >> 8) & 0xff;
+          output[11] = cnt & 0xff;
+          // send it back
+          HAL_SendIPPacket(if_index, output, ip_len, MULTICAST_MAC);
+        }
+      }
       // ref. RFC2453 3.8
       // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
       // 每 30s 做什么
+      for (RoutingTableEntry* rte : ans) {
+        if (time > rte->timestamp + (TIMEOUT + GARBAGE_COLLECTION) * 1000) {
+          update(false, *rte);
+        }
+        else if (time > rte->timestamp + TIMEOUT * 1000) {
+          if (rte->metric != METRIC_INF) {
+            rte->metric = METRIC_INF;
+            update(true, *rte);
+          }
+        }
+      }
       // 例如：超时？发 RIP Request/Response？
       printf("30s Timer\n");
       last_time = time;
@@ -215,19 +306,142 @@ int main(int argc, char *argv[]) {
         } else {
           // 3a.2 response, ref. RFC2453 3.9.2
           // update routing table
-          // new metric = ?
+          // new metric = MIN (metric + cost, infinity)
           // update metric, if_index, nexthop
-          // what is missing from RoutingTableEntry?
-          // TODO: use query and update [ ]
-          // TODO: triggered updates? ref. RFC2453 3.10.1 [ ]
+          // what is missing from RoutingTableEntry? metric, timestamp
+          RipPacket update_rip;
+          update_rip.command = 2;
+          update_rip.numEntries = 0;
+          // TODO: use query and update [x]
+          for (uint32_t i = 0; i < rip.numEntries; i++) {
+            if (!((1 <= rip.entries[i].metric && rip.entries[i].metric <= METRIC_INF))) continue;
+            uint32_t new_metric = rip.entries[i].metric + METRIC_COST;
+            if (new_metric > METRIC_INF) new_metric = METRIC_INF;
+            uint32_t found_nexthop, found_if_index, found_metric;
+            if (query(rip.entries[i].addr, &found_nexthop, &found_if_index, &found_metric)) {
+              // TODO: reset timer [x]
+              if (found_nexthop == rip.entries[i].nexthop && found_metric != new_metric) {
+                RoutingTableEntry new_entry;
+                new_entry.addr = rip.entries[i].addr;
+                new_entry.if_index = if_index;
+                new_entry.metric = new_metric;
+                new_entry.nexthop = found_nexthop;
+                new_entry.timestamp = HAL_GetTicks();
+                for (uint32_t j = 0; j < 32; j++) {
+                  new_entry.len = j;
+                  if (((1 << j) & rip.entries[i].mask) == 0) break;
+                }
+                update(new_metric != METRIC_INF, new_entry); // directly delete if INF
+                if (new_metric != METRIC_INF) {
+                  RipEntry tmp;
+                  tmp.addr = new_entry.addr;
+                  tmp.mask = rip.entries[i].mask;
+                  tmp.metric = new_metric;
+                  tmp.nexthop = rip.entries[i].nexthop;
+                  update_rip.entries[update_rip.numEntries++] = tmp;
+                }
+              }
+              else if (new_metric <= found_metric) {
+                // TODO: select neighbor [x]
+                RoutingTableEntry new_entry;
+                new_entry.addr = rip.entries[i].addr;
+                new_entry.if_index = if_index;
+                new_entry.metric = new_metric;
+                new_entry.nexthop = rip.entries[i].nexthop;
+                new_entry.timestamp = HAL_GetTicks();
+                for (uint32_t j = 0; j < 32; j++) {
+                  new_entry.len = j;
+                  if (((1 << j) & rip.entries[j].mask) == 0) break;
+                }
+                update(true, new_entry);
+              }
+            }
+            else {
+              // TODO: not existed before [x]
+              RoutingTableEntry new_entry;
+              new_entry.addr = rip.entries[i].addr;
+              new_entry.if_index = if_index;
+              new_entry.metric = new_metric;
+              new_entry.nexthop = rip.entries[i].nexthop;
+              new_entry.timestamp = HAL_GetTicks();
+              for (uint32_t j = 0; j < 32; j++) {
+                  new_entry.len = j;
+                  if (((1 << j) & rip.entries[j].mask) == 0) break;
+                }
+              update(true, new_entry);
+            }
+          }
+          // TODO: triggered updates? ref. RFC2453 3.10.1 [x]
+          if (update_rip.numEntries > 0) {
+            for (uint32_t j = 0; j < N_IFACE_ON_BOARD; j++) {
+              if (j != if_index) {
+                // assemble
+                // IP
+                output[0] = 0x45;
+                output[1] = 0x0;
+                output[4] = 0;
+                output[5] = 0;
+                output[6] = 0;
+                output[7] = 0;
+                output[8] = 0x1;
+                // UDP
+                output[9] = 0x21;
+                output[12] = addrs[j] >> 24;
+                output[13] = (addrs[j] >> 16) & 0xff;
+                output[14] = (addrs[j] >> 8) & 0xff;
+                output[15] = addrs[j] & 0xff;
+                output[16] = MULTICAST_IP >> 24;
+                output[17] = (MULTICAST_IP >> 16) & 0xff;
+                output[18] = (MULTICAST_IP >> 8) & 0xff;
+                output[19] = MULTICAST_IP & 0xff;
+                // port = 520
+                output[20] = 0x02;
+                output[21] = 0x08;
+                output[22] = 0x02; // TODO: ???
+                output[23] = 0x08;
+                // RIP
+                uint32_t rip_len = assemble(&update_rip, &output[20 + 8]);
+
+                uint16_t udp_len = rip_len + 8;
+                output[24] = udp_len >> 8;
+                output[25] = udp_len & 0xff;
+
+                uint16_t ip_len = rip_len + 20 + 8;
+                output[2] = ip_len >> 8;
+                output[3] = ip_len & 0xff;
+
+                // checksum calculation for ip and udp
+                // if you don't want to calculate udp checksum, set it to zero
+                output[26] = 0;
+                output[27] = 0;
+                uint16_t header_len = 20;
+                uint32_t cnt = 0;
+                for (uint16_t i = 0; i + 1 < header_len; i += 2) {
+                  uint16_t tmp = i == 10 ? 0 : packet[i];
+                  tmp = tmp << 8;
+                  tmp += i == 10 ? 0 : packet[i + 1];
+                  cnt += tmp;
+                  while (0xffff < cnt) {
+                    uint16_t tmps = cnt >> 16;
+                    cnt = (cnt & 0xffff) + tmps;
+                  }
+                }
+                cnt = ~cnt & 0xffff;
+                output[10] = (cnt >> 8) & 0xff;
+                output[11] = cnt & 0xff;
+                // send it back
+                HAL_SendIPPacket(j, output, ip_len, MULTICAST_MAC);
+              }
+            }
+          }
         }
       }
     } else {
       // 3b.1 dst is not me
       // forward
       // beware of endianness
-      uint32_t nexthop, dest_if;
-      if (query(dst_addr, &nexthop, &dest_if)) {
+      uint32_t nexthop, dest_if, found_metric;
+      if (query(dst_addr, &nexthop, &dest_if, &found_metric)) {
         // found
         macaddr_t dest_mac;
         // direct routing

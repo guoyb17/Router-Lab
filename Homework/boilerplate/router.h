@@ -5,4 +5,5 @@ typedef struct {
     uint32_t if_index;
     uint32_t nexthop;
     uint32_t metric;
+    uint64_t timestamp;
 } RoutingTableEntry;

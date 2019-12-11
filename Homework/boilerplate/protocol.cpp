@@ -17,6 +17,7 @@
     uint32_t mask;
     uint32_t nexthop;
     uint32_t metric;
+    uint64_t timestamp;
   } RipEntry;
 
   typedef struct {

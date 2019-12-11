@@ -222,9 +222,10 @@ void update(bool insert, RoutingTableEntry entry) {
  * @param addr 需要查询的目标地址，大端序
  * @param nexthop 如果查询到目标，把表项的 nexthop 写入
  * @param if_index 如果查询到目标，把表项的 if_index 写入
+ * @param metric 如果查询到目标，把表项的 metric 写入
  * @return 查到则返回 true ，没查到则返回 false
  */
-bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index) {
+bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index, uint32_t* metric) {
     Bin** ans = nullptr;
     mk_word(addr, ans);
     vector<const RoutingTableEntry*> list;
@@ -233,6 +234,7 @@ bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index) {
     const RoutingTableEntry value = *list[list.size() - 1];
     *nexthop = value.nexthop;
     *if_index = value.if_index;
+	*metric = value.metric;
     return true;
 }
 
