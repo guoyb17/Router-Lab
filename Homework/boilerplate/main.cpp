@@ -23,13 +23,13 @@ macaddr_t MULTICAST_MAC = { 0x09, 0x00, 0x00, 0x5E, 0x00, 0x01 };
 
 uint8_t packet[2048];
 uint8_t output[2048];
-// 0: 10.0.0.1
-// 1: 10.0.1.1
+// 0: 192.168.3.2 // ori: 10.0.0.1
+// 1: 192.168.4.1 // ori: 10.0.1.1
 // 2: 10.0.2.1
 // 3: 10.0.3.1
 // 你可以按需进行修改，注意端序
-in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0100000a, 0x0101000a, 0x0102000a,
-                                     0x0103000a};
+in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0203a8c0, 0x0104a8c0, 0x0102000a,
+                                     0x0103000a}; // ori: 0x0100000a, 0x0101000a, 0x0102000a, 0x0103000a
 
 int main(int argc, char *argv[]) {
   // 0a. 初始化 HAL，打开调试信息
