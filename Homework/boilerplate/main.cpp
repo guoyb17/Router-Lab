@@ -171,17 +171,17 @@ int main(int argc, char *argv[]) {
       }
       // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
       // 每 30s 做什么
-      for (RoutingTableEntry* rte : ans) {
-        if (time > rte->timestamp + (TIMEOUT + GARBAGE_COLLECTION) * 1000) {
-          update(false, *rte);
-        }
-        else if (time > rte->timestamp + TIMEOUT * 1000) {
-          if (rte->metric != METRIC_INF) {
-            rte->metric = METRIC_INF;
-            update(true, *rte);
-          }
-        }
-      }
+      // for (RoutingTableEntry* rte : ans) {
+      //   if (time > rte->timestamp + (TIMEOUT + GARBAGE_COLLECTION) * 1000) {
+      //     update(false, *rte);
+      //   }
+      //   else if (time > rte->timestamp + TIMEOUT * 1000) {
+      //     if (rte->metric != METRIC_INF) {
+      //       rte->metric = METRIC_INF;
+      //       update(true, *rte);
+      //     }
+      //   }
+      // }
       // 例如：超时？发 RIP Request/Response？
       printf("30s Timer\n");
       for (RoutingTableEntry* i : ans) {
