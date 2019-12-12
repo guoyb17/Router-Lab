@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
             << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
             << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
             << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-            << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+            << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
             << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
             << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
           }
@@ -243,7 +243,8 @@ int main(int argc, char *argv[]) {
       dst_is_me = true;
     }
     // TODO: Handle rip multicast address(224.0.0.9) [x]
-    std::cout << "dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
+    std::cout << "dst_addr = 0x" << std::ios::hex << dst_addr << std::ios::dec
+    << ", dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
 
     if (dst_is_me) {
       // 3a.1
@@ -339,7 +340,7 @@ int main(int argc, char *argv[]) {
               << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
               << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
               << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-              << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+              << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
               << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
               << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
             }
@@ -354,7 +355,7 @@ int main(int argc, char *argv[]) {
             << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
             << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
             << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-            << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+            << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
             << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
             << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
           }
@@ -497,7 +498,7 @@ int main(int argc, char *argv[]) {
                   << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
                   << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
                   << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-                  << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+                  << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
                   << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
                   << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
                 }
