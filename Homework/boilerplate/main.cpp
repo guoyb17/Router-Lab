@@ -412,18 +412,7 @@ int main(int argc, char *argv[]) {
               std::cout << "Changed to little endian, rip.entries[i].metric = " << new_metric << ", which is invalid!" << std::endl;
               continue;
             }
-            if (rip.entries[i].nexthop == 0) rip.entries[i].nexthop = src_addr;
-            else {
-              bool rewrite = true;
-              for (int j = 0; j < N_IFACE_ON_BOARD; j++) {
-                if (rip.entries[i].nexthop == addrs[j]) {
-                  rip.entries[i].nexthop = 0;
-                  rewrite = false;
-                  break;
-                }
-              }
-              if (rewrite) rip.entries[i].nexthop = src_addr;
-            }
+            rip.entries[i].nexthop = src_addr;
             if (new_metric >= METRIC_INF) new_metric = METRIC_INF;
             else new_metric += METRIC_COST;
             uint32_t found_nexthop, found_if_index, found_metric;
