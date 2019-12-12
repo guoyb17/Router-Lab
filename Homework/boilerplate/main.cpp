@@ -9,7 +9,7 @@
 #include <iostream>
 // #define DISPLAY_MULTICAST
 // #define DISPLAY_REQUEST
-// #define DISPLAY_RESPONSE
+#define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
