@@ -472,6 +472,15 @@ int main(int argc, char *argv[]) {
               }
               std::cout << "New route: " << new_entry.addr << ' ' << new_entry.metric << std::endl;
               update(true, new_entry);
+              std::vector<RoutingTableEntry*> ans;
+              getTable(ans);
+              for (RoutingTableEntry* i : ans) {
+              std::cout << (i->addr & 0xff) << '.' << ((i->addr >> 8) & 0xff) << '.'
+              << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
+              << " dev " << i->if_index << " proto Router-Lab scope link"
+              << " metric " << i->metric
+              << std::endl;
+      }
             }
           }
           // TODO: triggered updates? ref. RFC2453 3.10.1 [x]
