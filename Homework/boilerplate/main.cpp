@@ -64,8 +64,10 @@ int main(int argc, char *argv[]) {
   while (1) {
     // 获取当前时间，处理定时任务
     uint64_t time = HAL_GetTicks();
+    // when testing, you can change 30s to 5s
     if (time > last_time + 30 * 1000) {
-      // TODO: What to do? [x]
+      // TODO: send complete routing table to every interface [x]
+      // ref. RFC2453 Section 3.8
       // TODO: split horizon [ ]
       std::vector<RoutingTableEntry*> ans;
       getTable(ans);
@@ -153,7 +155,6 @@ int main(int argc, char *argv[]) {
           HAL_SendIPPacket(if_index, output, ip_len, MULTICAST_MAC);
         }
       }
-      // ref. RFC2453 3.8
       // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
       // 每 30s 做什么
       for (RoutingTableEntry* rte : ans) {
@@ -174,6 +175,7 @@ int main(int argc, char *argv[]) {
         << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
         << " dev " << i->if_index << " proto Router-Lab scope link" << std::endl;
       }
+      // TODO: print complete routing table to stdout/stderr [x]
       last_time = time;
     }
 
@@ -224,7 +226,7 @@ int main(int argc, char *argv[]) {
     in_addr_t src_addr = (packet[12] << 24) + (packet[13] << 16) + (packet[14] << 8) + packet[15],
               dst_addr = (packet[16] << 24) + (packet[17] << 16) + (packet[18] << 8) + packet[19];
     uint16_t src_port = (packet[20] << 8) + packet[21];
-    // TODO: extract src_addr and dst_addr from packet [x]
+    // TODO: extract src_addr and dst_addr from packet (big endian) [x]
     // big endian
 
     // 2. check whether dst is me
@@ -239,7 +241,7 @@ int main(int argc, char *argv[]) {
     if (memcmp(&dst_addr, &multicast_addr, sizeof(in_addr_t)) == 0) {
       dst_is_me = true;
     }
-    // TODO: Handle rip multicast address(224.0.0.9)? [x]
+    // TODO: Handle rip multicast address(224.0.0.9) [x]
     std::cout << "dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
 
     if (dst_is_me) {
@@ -257,6 +259,7 @@ int main(int argc, char *argv[]) {
           getTable(ans);
           int k_total = ans.size() / RIP_MAX_ENTRY;
           for (int k = 0; k <= k_total; k++) {
+            // TODO: fill resp [x]
             RipPacket resp;
             resp.command = 2;
             resp.numEntries = 0;
@@ -269,6 +272,7 @@ int main(int argc, char *argv[]) {
             }
             // assemble
             // IP
+            // TODO: fill IP headers [x]
             output[0] = 0x45;
             output[1] = 0x0;
             // TODO: length of IP: output 2, 3 [x]
@@ -289,6 +293,7 @@ int main(int argc, char *argv[]) {
             output[18] = (src_addr >> 8) & 0xff;
             output[19] = src_addr & 0xff;
             // port = 520
+            // TODO: fill UDP headers [x]
             output[20] = 0x02;
             output[21] = 0x08;
             output[22] = src_port >> 8;
@@ -347,6 +352,10 @@ int main(int argc, char *argv[]) {
           // new metric = MIN (metric + cost, infinity)
           // update metric, if_index, nexthop
           // what is missing from RoutingTableEntry? metric, timestamp
+          // TODO: update routing table [x]
+          // TODO: handle nexthop = 0 case [ ]
+          // HINT: what is missing from RoutingTableEntry?
+          // you might want to use `query` and `update` but beware of the difference between exact match and longest prefix match
           RipPacket update_rip;
           update_rip.command = 2;
           update_rip.numEntries = 0;
@@ -504,7 +513,7 @@ int main(int argc, char *argv[]) {
           memcpy(output, packet, res);
           // update ttl and checksum
           forward(output, res);
-          // TODO: you might want to check ttl=0 case [x]
+          // TODO: check ttl=0 case [x]
           if (output[8] == 0) {
             output[20] = 11;
             output[21] = 0;
@@ -547,7 +556,7 @@ int main(int argc, char *argv[]) {
         } else {
           // not found
           // you can drop it
-          printf("ARP not found for %x\n", nexthop);
+          printf("ARP not found for nexthop %x\n", nexthop);
         }
       } else {
         // not found: ICMP Destination Network Unreachable
@@ -590,7 +599,7 @@ int main(int argc, char *argv[]) {
         output[11] = cnt16 & 0xff;
         HAL_SendIPPacket(dest_if, output, 20 + 64, src_mac);
 
-        printf("IP not found for %x\n", src_addr);
+        printf("IP not found for src %x dst %x\n", src_addr, dst_addr);
       }
     }
   }
