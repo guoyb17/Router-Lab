@@ -412,6 +412,13 @@ int main(int argc, char *argv[]) {
               std::cout << "Changed to little endian, rip.entries[i].metric = " << new_metric << ", which is invalid!" << std::endl;
               continue;
             }
+            if (rip.entries[i].nexthop == 0) rip.entries[i].nexthop = src_addr;
+            else for (int j = 0; j < N_IFACE_ON_BOARD; j++) {
+              if (rip.entries[i].nexthop == addrs[j]) {
+                rip.entries[i].nexthop = 0;
+                break;
+              }
+            }
             new_metric += METRIC_COST;
             if (new_metric > METRIC_INF) new_metric = METRIC_INF;
             uint32_t found_nexthop, found_if_index, found_metric;
@@ -451,7 +458,7 @@ int main(int argc, char *argv[]) {
                 new_entry.addr = rip.entries[i].addr;
                 new_entry.if_index = if_index;
                 new_entry.metric = new_metric;
-                new_entry.nexthop = src_addr;
+                new_entry.nexthop = rip.entries[i].nexthop;
                 new_entry.timestamp = HAL_GetTicks();
                 for (new_entry.len = 0; new_entry.len < 32; new_entry.len++) {
                   if (((1 << new_entry.len) & rip.entries[i].mask) == 0) break;
