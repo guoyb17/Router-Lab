@@ -470,7 +470,8 @@ int main(int argc, char *argv[]) {
               for (new_entry.len = 0; new_entry.len < 32; new_entry.len++) {
                 if (((1 << (31 - new_entry.len)) & rip.entries[new_entry.len].mask) == 0) break;
               }
-              std::cout << "New route: " << new_entry.addr << ' ' << new_entry.metric << std::endl;
+              std::cout << "New route: " << new_entry.addr << ' ' << new_entry.metric
+              << ' ' << new_entry.len << std::endl;
               update(true, new_entry);
               std::vector<RoutingTableEntry*> ans;
               getTable(ans);
