@@ -257,9 +257,9 @@ int main(int argc, char *argv[]) {
       dst_is_me = true;
     }
     // TODO: Handle rip multicast address(224.0.0.9) [x]
-    std::cout << "dst_addr = 0x";
-    printf("%x", dst_addr);
-    std::cout << ", dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
+    // std::cout << "dst_addr = 0x";
+    // printf("%x", dst_addr);
+    // std::cout << ", dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
 
     if (dst_is_me) {
       // 3a.1
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
       // check and validate
       if (disassemble(packet, res, &rip)) {
         if (rip.command == 1) {
-          std::cout << "Got a request..." << std::endl;
+          // std::cout << "Got a request..." << std::endl;
           // 3a.3 request, ref. RFC2453 3.9.1
           // only need to respond to whole table requests in the lab
           // TODO: fill resp [x]
@@ -373,10 +373,10 @@ int main(int argc, char *argv[]) {
             HAL_SendIPPacket(if_index, output, ip_len, src_mac);
           }
         } else {
+#ifdef DISPLAY_RESPONSE
           std::cout << "Got a response from "
           << (src_addr & 0xff) << '.' << ((src_addr >> 8) & 0xff) << '.'
           << ((src_addr >> 16) & 0xff) << '.' << ((src_addr >> 24) & 0xff) << std::endl;
-#ifdef DISPLAY_RESPONSE
           for (int k = 0; k < rip.numEntries; k++) {
             RipEntry re = rip.entries[k];
             std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
