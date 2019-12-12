@@ -147,10 +147,10 @@ int main(int argc, char *argv[]) {
           cnt = ~cnt & 0xffff;
           output[10] = (cnt >> 8) & 0xff;
           output[11] = cnt & 0xff;
-          std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
-          << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
           // send it back
 #ifdef DISPLAY_MULTICAST
+          std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
+          << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
           std::cout << "Sending response of multicast: if_index: " << if_index << std::endl;
           for (int k = 0; k < resp.numEntries; k++) {
             RipEntry re = resp.entries[k];
@@ -346,10 +346,10 @@ int main(int argc, char *argv[]) {
             cnt = ~cnt & 0xffff;
             output[10] = cnt & 0xff;
             output[11] = (cnt >> 8) & 0xff;
-            std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
-            << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
             // send it back
 #ifdef DISPLAY_REQUEST
+            std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
+            << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
             std::cout << "Sending response of request: if_index: " << if_index << std::endl;
             for (int k = 0; k < resp.numEntries; k++) {
               RipEntry re = resp.entries[k];
@@ -512,10 +512,10 @@ int main(int argc, char *argv[]) {
                 cnt = ~cnt & 0xffff;
                 output[10] = cnt & 0xff;
                 output[11] = (cnt >> 8) & 0xff;
-                std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
-                << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
                 // send it back
 #ifdef DISPLAY_UPDATE
+                std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
+                << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
                 std::cout << "Sending response of update: if_index: " << j << std::endl;
                 for (int k = 0; k < update_rip.numEntries; k++) {
                   RipEntry re = update_rip.entries[k];
@@ -591,8 +591,8 @@ int main(int argc, char *argv[]) {
             uint16_t cnt16 = ~cnt & 0xffff;
             output[10] = cnt16 >> 8;
             output[11] = cnt16 & 0xff;
-            std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
-            << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
+            // std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
+            // << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
           }
           HAL_SendIPPacket(dest_if, output, res, src_mac);
         } else {
