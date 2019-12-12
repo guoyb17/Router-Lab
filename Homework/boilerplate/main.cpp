@@ -135,6 +135,16 @@ int main(int argc, char *argv[]) {
           output[10] = (cnt >> 8) & 0xff;
           output[11] = cnt & 0xff;
           // send it back
+          std::cout << "Sending response of multicast: if_index: " << if_index << std::endl;
+          for (RipEntry re : resp.entries) {
+            std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
+            << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
+            << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
+            << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
+            << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+            << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
+            << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
+          }
           HAL_SendIPPacket(if_index, output, ip_len, MULTICAST_MAC);
         }
       }
@@ -309,6 +319,16 @@ int main(int argc, char *argv[]) {
             output[10] = (cnt >> 8) & 0xff;
             output[11] = cnt & 0xff;
             // send it back
+            std::cout << "Sending response of request: if_index: " << if_index << std::endl;
+            for (RipEntry re : resp.entries) {
+              std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
+              << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
+              << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
+              << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
+              << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+              << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
+              << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
+            }
             HAL_SendIPPacket(if_index, output, ip_len, src_mac);
           }
         } else {
@@ -439,6 +459,16 @@ int main(int argc, char *argv[]) {
                 output[10] = (cnt >> 8) & 0xff;
                 output[11] = cnt & 0xff;
                 // send it back
+                std::cout << "Sending response of update: if_index: " << j << std::endl;
+                for (RipEntry re : update_rip.entries) {
+                  std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
+                  << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
+                  << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
+                  << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
+                  << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+                  << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
+                  << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
+                }
                 HAL_SendIPPacket(j, output, ip_len, MULTICAST_MAC);
               }
             }
