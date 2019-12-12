@@ -116,12 +116,12 @@ int main(int argc, char *argv[]) {
           uint32_t rip_len = assemble(&resp, &output[20 + 8]);
 
           uint16_t udp_len = rip_len + 8;
-          output[24] = udp_len >> 8;
-          output[25] = udp_len & 0xff;
+          output[24] = udp_len & 0xff;
+          output[25] = udp_len >> 8;
 
           uint16_t ip_len = rip_len + 20 + 8;
-          output[2] = ip_len >> 8;
-          output[3] = ip_len & 0xff;
+          output[2] = ip_len & 0xff;
+          output[3] = ip_len >> 8;
 
           // checksum calculation for ip and udp
           // if you don't want to calculate udp checksum, set it to zero
@@ -129,6 +129,8 @@ int main(int argc, char *argv[]) {
           output[27] = 0;
           uint16_t header_len = 20;
           uint32_t cnt = 0;
+          output[10] = 0;
+          output[11] = 0;
           for (uint16_t i = 0; i + 1 < header_len; i += 2) {
             uint16_t tmp = i == 10 ? 0 : packet[i];
             tmp = tmp << 8;
@@ -140,8 +142,10 @@ int main(int argc, char *argv[]) {
             }
           }
           cnt = ~cnt & 0xffff;
-          output[10] = (cnt >> 8) & 0xff;
-          output[11] = cnt & 0xff;
+          output[10] = cnt & 0xff;
+          output[11] = (cnt >> 8) & 0xff;
+          std::cout << "checksum = 0x" << std::ios::hex << cnt << std::ios::dec
+          << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
           // send it back
 #ifdef DISPLAY_MULTICAST
           std::cout << "Sending response of multicast: if_index: " << if_index << std::endl;
@@ -324,6 +328,8 @@ int main(int argc, char *argv[]) {
             output[27] = 0;
             uint16_t header_len = 20;
             uint32_t cnt = 0;
+            output[10] = 0;
+            output[11] = 0;
             for (uint16_t i = 0; i + 1 < header_len; i += 2) {
               uint16_t tmp = i == 10 ? 0 : packet[i];
               tmp = tmp << 8;
@@ -337,6 +343,8 @@ int main(int argc, char *argv[]) {
             cnt = ~cnt & 0xffff;
             output[10] = cnt & 0xff;
             output[11] = (cnt >> 8) & 0xff;
+            std::cout << "checksum = 0x" << std::ios::hex << cnt << std::ios::dec
+            << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
             // send it back
 #ifdef DISPLAY_REQUEST
             std::cout << "Sending response of request: if_index: " << if_index << std::endl;
@@ -486,6 +494,8 @@ int main(int argc, char *argv[]) {
                 output[27] = 0;
                 uint16_t header_len = 20;
                 uint32_t cnt = 0;
+                output[10] = 0;
+                output[11] = 0;
                 for (uint16_t i = 0; i + 1 < header_len; i += 2) {
                   uint16_t tmp = i == 10 ? 0 : packet[i];
                   tmp = tmp << 8;
@@ -499,6 +509,8 @@ int main(int argc, char *argv[]) {
                 cnt = ~cnt & 0xffff;
                 output[10] = cnt & 0xff;
                 output[11] = (cnt >> 8) & 0xff;
+                std::cout << "checksum = 0x" << std::ios::hex << cnt << std::ios::dec
+                << ", it's " << (validateIPChecksum(output, ip_len) ? "true." : "false.") << std::endl;
                 // send it back
 #ifdef DISPLAY_UPDATE
                 std::cout << "Sending response of update: if_index: " << j << std::endl;
@@ -561,6 +573,8 @@ int main(int argc, char *argv[]) {
             }
 
             uint32_t cnt = 0;
+            output[10] = 0;
+            output[11] = 0;
             for (uint16_t i = 0; i + 1 < 20; i += 2) {
               uint16_t tmp = output[i];
               tmp = tmp << 8;
@@ -574,6 +588,8 @@ int main(int argc, char *argv[]) {
             uint16_t cnt16 = ~cnt & 0xffff;
             output[10] = cnt16 & 0xff;
             output[11] = cnt16 >> 8;
+            std::cout << "checksum = 0x" << std::ios::hex << cnt << std::ios::dec
+            << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
           }
           HAL_SendIPPacket(dest_if, output, res, src_mac);
         } else {
