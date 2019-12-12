@@ -7,8 +7,8 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
-#define DISPLAY_MULTICAST
-// #define DISPLAY_REQUEST
+// #define DISPLAY_MULTICAST
+#define DISPLAY_REQUEST
 #define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
 
