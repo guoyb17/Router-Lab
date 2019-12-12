@@ -135,9 +135,9 @@ int main(int argc, char *argv[]) {
           output[10] = 0;
           output[11] = 0;
           for (uint16_t i = 0; i + 1 < header_len; i += 2) {
-            uint16_t tmp = i == 10 ? 0 : packet[i];
+            uint16_t tmp = i == 10 ? 0 : output[i];
             tmp = tmp << 8;
-            tmp += i == 10 ? 0 : packet[i + 1];
+            tmp += i == 10 ? 0 : output[i + 1];
             cnt += tmp;
             while (0xffff < cnt) {
               uint16_t tmps = cnt >> 16;
