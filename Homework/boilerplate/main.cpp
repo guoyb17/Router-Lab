@@ -240,6 +240,7 @@ int main(int argc, char *argv[]) {
       dst_is_me = true;
     }
     // TODO: Handle rip multicast address(224.0.0.9)? [x]
+    std::cout << "dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
 
     if (dst_is_me) {
       // 3a.1
@@ -247,6 +248,7 @@ int main(int argc, char *argv[]) {
       // check and validate
       if (disassemble(packet, res, &rip)) {
         if (rip.command == 1) {
+          std::cout << "Got a request..." << std::endl;
           // 3a.3 request, ref. RFC2453 3.9.1
           // only need to respond to whole table requests in the lab
           // TODO: fill resp [x]
@@ -339,6 +341,7 @@ int main(int argc, char *argv[]) {
             HAL_SendIPPacket(if_index, output, ip_len, src_mac);
           }
         } else {
+          std::cout << "Got a response..." << std::endl;
           // 3a.2 response, ref. RFC2453 3.9.2
           // update routing table
           // new metric = MIN (metric + cost, infinity)
