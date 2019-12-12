@@ -158,7 +158,10 @@ int main(int argc, char *argv[]) {
             << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
             << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
             << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-            << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
+            << " metric = " << (re.metric >> 24)
+            + (((re.metric >> 16) & 0xff) << 8)
+            + (((re.metric >> 8) & 0xff) << 16)
+            + ((re.metric & 0xff) << 24)
             << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
             << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
           }
@@ -357,7 +360,10 @@ int main(int argc, char *argv[]) {
               << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
               << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
               << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-              << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
+              << " metric = " << (re.metric >> 24)
+              + (((re.metric >> 16) & 0xff) << 8)
+              + (((re.metric >> 8) & 0xff) << 16)
+              + ((re.metric & 0xff) << 24)
               << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
               << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
             }
@@ -375,7 +381,10 @@ int main(int argc, char *argv[]) {
             << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
             << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
             << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-            << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
+            << " metric = " << (re.metric >> 24)
+            + (((re.metric >> 16) & 0xff) << 8)
+            + (((re.metric >> 8) & 0xff) << 16)
+            + ((re.metric & 0xff) << 24)
             << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
             << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
           }
@@ -537,7 +546,10 @@ int main(int argc, char *argv[]) {
                   << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
                   << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
                   << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
-                  << " metric = 0x" << std::ios::hex << (re.metric & 0xf) << std::ios::dec
+                  << " metric = " << (re.metric >> 24)
+                  + (((re.metric >> 16) & 0xff) << 8)
+                  + (((re.metric >> 8) & 0xff) << 16)
+                  + ((re.metric & 0xff) << 24)
                   << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
                   << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
                 }
