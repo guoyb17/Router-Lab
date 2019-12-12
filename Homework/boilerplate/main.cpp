@@ -365,7 +365,9 @@ int main(int argc, char *argv[]) {
             HAL_SendIPPacket(if_index, output, ip_len, src_mac);
           }
         } else {
-          std::cout << "Got a response..." << std::endl;
+          std::cout << "Got a response from "
+          << (src_addr & 0xff) << '.' << ((src_addr >> 8) & 0xff) << '.'
+          << ((src_addr >> 16) & 0xff) << '.' << ((src_addr >> 24) & 0xff) << std::endl;
 #ifdef DISPLAY_RESPONSE
           for (int k = 0; k < rip.numEntries; k++) {
             RipEntry re = rip.entries[k];
