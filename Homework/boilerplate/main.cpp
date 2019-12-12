@@ -7,7 +7,6 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
-// #include "standard.h"
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern void update(bool insert, RoutingTableEntry entry);
@@ -155,12 +154,10 @@ int main(int argc, char *argv[]) {
       }
       // 例如：超时？发 RIP Request/Response？
       printf("30s Timer\n");
-      std::vector<RoutingTableEntry*> ans;
-      getTable(ans);
       for (RoutingTableEntry* i : ans) {
         std::cout << (i->addr & 0xff) << '.' << ((i->addr >> 8) & 0xff) << '.'
         << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
-        << " dev " << interfaces[i->if_index] << " proto Router-Lab scope link" << std::endl;
+        << " dev " << i->if_index << " proto Router-Lab scope link" << std::endl;
       }
       last_time = time;
     }
