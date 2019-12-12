@@ -393,7 +393,10 @@ int main(int argc, char *argv[]) {
           update_rip.numEntries = 0;
           // TODO: use query and update [x]
           for (uint32_t i = 0; i < rip.numEntries; i++) {
-            if (!((1 <= rip.entries[i].metric && rip.entries[i].metric <= METRIC_INF))) continue;
+            if (!((1 <= rip.entries[i].metric && rip.entries[i].metric <= METRIC_INF))) {
+              std::cout << "rip.entries[i].metric = " << rip.entries[i].metric << ", which is invalid!" << std::endl;
+              continue;
+            }
             uint32_t new_metric = (rip.entries[i].metric >> 24)
             + (((rip.entries[i].metric >> 16) & 0xff) << 8)
             + (((rip.entries[i].metric >> 8) & 0xff) << 16)
