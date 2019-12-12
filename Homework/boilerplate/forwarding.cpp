@@ -32,16 +32,28 @@ bool forward(uint8_t *packet, size_t len) {
   uint16_t cnt16 = ~cnt & 0xffff;
   if (cnt16 != ori_checksum) return false;
 
-  uint16_t m0 = (packet[8] << 8) + packet[9];
+  // uint16_t m0 = (packet[8] << 8) + packet[9];
   packet[8] -= 1;
-  uint16_t m1 = m0 - 0x100;
+  // uint16_t m1 = m0 - 0x100;
 
-  cnt16 = ~cnt16;
-  m0 = ~m0;
-  uint32_t tmp = cnt16 + m0 + m1;
-  if (0xffff < tmp) cnt16 = (tmp >> 16) + (tmp & 0xffff);
-  else cnt16 = tmp;
-  cnt16 = ~cnt16;
+  // cnt16 = ~cnt16;
+  // m0 = ~m0;
+  // uint32_t tmp = cnt16 + m0 + m1;
+  // if (0xffff < tmp) cnt16 = (tmp >> 16) + (tmp & 0xffff);
+  // else cnt16 = tmp;
+  // cnt16 = ~cnt16;
+  uint32_t cnt = 0;
+  for (uint16_t i = 0; i + 1 < header_len; i += 2) {
+    uint16_t tmp = packet[i];
+    tmp = tmp << 8;
+    tmp += packet[i + 1];
+    cnt += tmp;
+    while (0xffff < cnt) {
+      uint16_t tmps = cnt >> 16;
+      cnt = (cnt & 0xffff) + tmps;
+    }
+  }
+  uint16_t cnt16 = ~cnt & 0xffff;
 
   packet[11] = cnt16 & 0xff;
   packet[10] = (cnt16 >> 8) & 0xff;
