@@ -96,15 +96,15 @@ int main(int argc, char *argv[]) {
           output[7] = 0;
           output[8] = 0x1;
           // UDP
-          output[9] = 0x21;
-          output[12] = addrs[if_index] >> 24;
-          output[13] = (addrs[if_index] >> 16) & 0xff;
-          output[14] = (addrs[if_index] >> 8) & 0xff;
-          output[15] = addrs[if_index] & 0xff;
-          output[16] = MULTICAST_IP >> 24;
-          output[17] = (MULTICAST_IP >> 16) & 0xff;
-          output[18] = (MULTICAST_IP >> 8) & 0xff;
-          output[19] = MULTICAST_IP & 0xff;
+          output[9] = 0x11;
+          output[12] = addrs[if_index] & 0xff;
+          output[13] = (addrs[if_index] >> 8) & 0xff;
+          output[14] = (addrs[if_index] >> 16) & 0xff;
+          output[15] = addrs[if_index] >> 24;
+          output[16] = MULTICAST_IP & 0xff;
+          output[17] = (MULTICAST_IP >> 8) & 0xff;
+          output[18] = (MULTICAST_IP >> 16) & 0xff;
+          output[19] = MULTICAST_IP >> 24;
           // port = 520
           output[20] = 0x02;
           output[21] = 0x08;
@@ -284,34 +284,34 @@ int main(int argc, char *argv[]) {
             output[7] = 0;
             output[8] = 0x1;
             // UDP
-            output[9] = 0x21;
+            output[9] = 0x11;
             // TODO: checksum of IP: output 10, 11 [x]
-            output[12] = dst_addr >> 24;
-            output[13] = (dst_addr >> 16) & 0xff;
-            output[14] = (dst_addr >> 8) & 0xff;
-            output[15] = dst_addr & 0xff;
-            output[16] = src_addr >> 24;
-            output[17] = (src_addr >> 16) & 0xff;
-            output[18] = (src_addr >> 8) & 0xff;
-            output[19] = src_addr & 0xff;
+            output[12] = dst_addr & 0xff;
+            output[13] = (dst_addr >> 8) & 0xff;
+            output[14] = (dst_addr >> 16) & 0xff;
+            output[15] = dst_addr >> 24;
+            output[16] = src_addr & 0xff;
+            output[17] = (src_addr >> 8) & 0xff;
+            output[18] = (src_addr >> 16) & 0xff;
+            output[19] = src_addr >> 24;
             // port = 520
             // TODO: fill UDP headers [x]
             output[20] = 0x02;
             output[21] = 0x08;
-            output[22] = src_port >> 8;
-            output[23] = src_port & 0xff;
+            output[22] = src_port & 0xff;
+            output[23] = src_port >> 8;
             // TODO: length of UDP: output 24, 25 [x]
             // TODO: checksum of UDP: output 26, 27 [x]
             // RIP
             uint32_t rip_len = assemble(&resp, &output[20 + 8]);
 
             uint16_t udp_len = rip_len + 8;
-            output[24] = udp_len >> 8;
-            output[25] = udp_len & 0xff;
+            output[24] = udp_len & 0xff;
+            output[25] = udp_len >> 8;
 
             uint16_t ip_len = rip_len + 20 + 8;
-            output[2] = ip_len >> 8;
-            output[3] = ip_len & 0xff;
+            output[2] = ip_len & 0xff;
+            output[3] = ip_len >> 8;
 
             // checksum calculation for ip and udp
             // if you don't want to calculate udp checksum, set it to zero
@@ -330,8 +330,8 @@ int main(int argc, char *argv[]) {
               }
             }
             cnt = ~cnt & 0xffff;
-            output[10] = (cnt >> 8) & 0xff;
-            output[11] = cnt & 0xff;
+            output[10] = cnt & 0xff;
+            output[11] = (cnt >> 8) & 0xff;
             // send it back
 #ifdef DISPLAY_REQUEST
             std::cout << "Sending response of request: if_index: " << if_index << std::endl;
@@ -446,15 +446,15 @@ int main(int argc, char *argv[]) {
                 output[7] = 0;
                 output[8] = 0x1;
                 // UDP
-                output[9] = 0x21;
-                output[12] = addrs[j] >> 24;
-                output[13] = (addrs[j] >> 16) & 0xff;
-                output[14] = (addrs[j] >> 8) & 0xff;
-                output[15] = addrs[j] & 0xff;
-                output[16] = MULTICAST_IP >> 24;
-                output[17] = (MULTICAST_IP >> 16) & 0xff;
-                output[18] = (MULTICAST_IP >> 8) & 0xff;
-                output[19] = MULTICAST_IP & 0xff;
+                output[9] = 0x11; // ori: 0x21
+                output[12] = addrs[j] & 0xff;
+                output[13] = (addrs[j] >> 8) & 0xff;
+                output[14] = (addrs[j] >> 16) & 0xff;
+                output[15] = addrs[j] >> 24;
+                output[16] = MULTICAST_IP & 0xff;
+                output[17] = (MULTICAST_IP >> 8) & 0xff;
+                output[18] = (MULTICAST_IP >> 16) & 0xff;
+                output[19] = MULTICAST_IP >> 24;
                 // port = 520
                 output[20] = 0x02;
                 output[21] = 0x08;
@@ -488,8 +488,8 @@ int main(int argc, char *argv[]) {
                   }
                 }
                 cnt = ~cnt & 0xffff;
-                output[10] = (cnt >> 8) & 0xff;
-                output[11] = cnt & 0xff;
+                output[10] = cnt & 0xff;
+                output[11] = (cnt >> 8) & 0xff;
                 // send it back
 #ifdef DISPLAY_UPDATE
                 std::cout << "Sending response of update: if_index: " << j << std::endl;
@@ -533,16 +533,16 @@ int main(int argc, char *argv[]) {
             // TODO: checksum of ICMP: output 22, 23 [x]
             uint16_t icmp_checksum = 11;
             icmp_checksum = ~icmp_checksum;
-            output[22] = icmp_checksum >> 8;
-            output[23] = icmp_checksum & 0xff;
+            output[22] = icmp_checksum & 0xff;
+            output[23] = icmp_checksum >> 8;
             output[24] = 0;
             output[25] = 0;
             output[26] = 0;
             output[27] = 0;
             for (int j = 8; j < 64; j++) output[20 + j] = 0;
             res = 20 + 64;
-            output[2] = (res >> 8) & 0xff;
-            output[3] = res & 0xff;
+            output[2] = res & 0xff;
+            output[3] = (res >> 8) & 0xff;
             output[8] = 0xff;
             for (int i = 0; i < 4; i++) {
               uint8_t tmp = output[12 + i];
@@ -562,8 +562,8 @@ int main(int argc, char *argv[]) {
               }
             }
             uint16_t cnt16 = ~cnt & 0xffff;
-            output[10] = cnt16 >> 8;
-            output[11] = cnt16 & 0xff;
+            output[10] = cnt16 & 0xff;
+            output[11] = cnt16 >> 8;
           }
           HAL_SendIPPacket(dest_if, output, res, src_mac);
         } else {
@@ -579,16 +579,16 @@ int main(int argc, char *argv[]) {
         output[21] = 1;
         uint16_t icmp_checksum = 4;
         icmp_checksum = ~icmp_checksum;
-        output[22] = icmp_checksum >> 8;
-        output[23] = icmp_checksum & 0xff;
+        output[22] = icmp_checksum & 0xff;
+        output[23] = icmp_checksum >> 8;
         output[24] = 0;
         output[25] = 0;
         output[26] = 0;
         output[27] = 0;
         for (int j = 8; j < 64; j++) output[20 + j] = 0;
         res = 20 + 64;
-        output[2] = (res >> 8) & 0xff;
-        output[3] = res & 0xff;
+        output[2] = res & 0xff;
+        output[3] = (res >> 8) & 0xff;
         output[8] = 0xff;
         for (int i = 0; i < 4; i++) {
           uint8_t tmp = output[12 + i];
@@ -608,8 +608,8 @@ int main(int argc, char *argv[]) {
           }
         }
         uint16_t cnt16 = ~cnt & 0xffff;
-        output[10] = cnt16 >> 8;
-        output[11] = cnt16 & 0xff;
+        output[10] = cnt16 & 0xff;
+        output[11] = cnt16 >> 8;
         HAL_SendIPPacket(dest_if, output, 20 + 64, src_mac);
 
         printf("IP not found for src %x dst %x\n", src_addr, dst_addr);
