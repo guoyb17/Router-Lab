@@ -21,7 +21,7 @@ extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
 #define METRIC_COST 1
 #define METRIC_INF 16
-#define MULTICAST_IP 0x090000E0
+in_addr_t MULTICAST_IP = 0x090000E0;
 macaddr_t MULTICAST_MAC = { 0x09, 0x00, 0x00, 0x5E, 0x00, 0x01 };
 #define TIMEOUT 180
 #define GARBAGE_COLLECTION 120
@@ -238,8 +238,7 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    in_addr_t multicast_addr = 0xE0000009;
-    if (memcmp(&dst_addr, &multicast_addr, sizeof(in_addr_t)) == 0) {
+    if (memcmp(&dst_addr, &MULTICAST_IP, sizeof(in_addr_t)) == 0) {
       dst_is_me = true;
     }
     // TODO: Handle rip multicast address(224.0.0.9) [x]
