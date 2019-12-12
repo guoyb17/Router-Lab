@@ -471,6 +471,17 @@ int main(int argc, char *argv[]) {
                   if (((1 << new_entry.len) & rip.entries[i].mask) == 0) break;
                 }
                 update(true, new_entry);
+                if (new_metric != METRIC_INF) {
+                  RipEntry tmp;
+                  tmp.addr = new_entry.addr;
+                  tmp.mask = rip.entries[i].mask;
+                  tmp.metric = (new_metric >> 24)
+                  + (((new_metric >> 16) & 0xff) << 8)
+                  + (((new_metric >> 8) & 0xff) << 16)
+                  + ((new_metric & 0xff) << 24);
+                  tmp.nexthop = rip.entries[i].nexthop;
+                  update_rip.entries[update_rip.numEntries++] = tmp;
+                }
               }
             }
             else {
