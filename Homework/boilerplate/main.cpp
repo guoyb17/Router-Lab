@@ -418,7 +418,8 @@ int main(int argc, char *argv[]) {
               std::cout << "Found: nexthop = " << (found_nexthop & 0xff) << '.'
               << ((found_nexthop >> 8) & 0xff) << '.' << ((found_nexthop >> 16) & 0xff)
               << '.' << ((found_nexthop >> 24) & 0xff)
-              << ", if_index = " << found_if_index << std::endl;
+              << ", if_index = " << found_if_index
+              << ", metric = " << found_metric << std::endl;
               if (found_nexthop == rip.entries[i].nexthop && found_metric != new_metric) {
                 RoutingTableEntry new_entry;
                 new_entry.addr = rip.entries[i].addr;
