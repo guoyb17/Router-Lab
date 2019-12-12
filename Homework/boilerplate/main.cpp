@@ -604,7 +604,7 @@ int main(int argc, char *argv[]) {
           // found
           memcpy(output, packet, res);
           // update ttl and checksum
-          forward(output, res);
+          if (!forward(output, res)) std::cout << "forward return false!" << std::endl;
           // TODO: check ttl=0 case [x]
           if (output[8] == 0) {
             std::cout << "ttl = 0! Time exceed!" << std::endl;
