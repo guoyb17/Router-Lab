@@ -451,7 +451,7 @@ int main(int argc, char *argv[]) {
                 new_entry.addr = rip.entries[i].addr;
                 new_entry.if_index = if_index;
                 new_entry.metric = new_metric;
-                new_entry.nexthop = rip.entries[i].nexthop;
+                new_entry.nexthop = src_addr;
                 new_entry.timestamp = HAL_GetTicks();
                 for (new_entry.len = 0; new_entry.len < 32; new_entry.len++) {
                   if (((1 << new_entry.len) & rip.entries[i].mask) == 0) break;
