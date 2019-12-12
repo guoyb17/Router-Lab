@@ -648,7 +648,7 @@ int main(int argc, char *argv[]) {
           }
           std::cout << "Forward: checksum = 0x" << std::ios::hex << (((output[10] << 8) + output[11]) & 0xffff) << std::ios::dec
           << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
-          HAL_SendIPPacket(dest_if, output, res, src_mac);
+          HAL_SendIPPacket(dest_if, output, res, dest_mac);
         } else {
           // not found
           // you can drop it
