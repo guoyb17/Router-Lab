@@ -187,7 +187,9 @@ int main(int argc, char *argv[]) {
       for (RoutingTableEntry* i : ans) {
         std::cout << (i->addr & 0xff) << '.' << ((i->addr >> 8) & 0xff) << '.'
         << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
-        << " dev " << i->if_index << " proto Router-Lab scope link" << std::endl;
+        << " dev " << i->if_index << " proto Router-Lab scope link"
+        << " metric " << i->metric
+        << std::endl;
       }
       // TODO: print complete routing table to stdout/stderr [x]
       last_time = time;
