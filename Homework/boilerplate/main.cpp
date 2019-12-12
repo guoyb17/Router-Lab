@@ -145,7 +145,8 @@ int main(int argc, char *argv[]) {
           // send it back
 #ifdef DISPLAY_MULTICAST
           std::cout << "Sending response of multicast: if_index: " << if_index << std::endl;
-          for (RipEntry re : resp.entries) {
+          for (int k = 0; k < resp.numEntries; k++) {
+            RipEntry re = resp.entries[k];
             std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
             << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
             << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
@@ -339,7 +340,8 @@ int main(int argc, char *argv[]) {
             // send it back
 #ifdef DISPLAY_REQUEST
             std::cout << "Sending response of request: if_index: " << if_index << std::endl;
-            for (RipEntry re : resp.entries) {
+            for (int k = 0; k < resp.numEntries; k++) {
+              RipEntry re = resp.entries[k];
               std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
               << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
               << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
@@ -354,7 +356,8 @@ int main(int argc, char *argv[]) {
         } else {
           std::cout << "Got a response..." << std::endl;
 #ifdef DISPLAY_RESPONSE
-          for (RipEntry re : rip.entries) {
+          for (int k = 0; k < rip.numEntries; k++) {
+            RipEntry re = rip.entries[k];
             std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
             << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
             << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
@@ -499,7 +502,8 @@ int main(int argc, char *argv[]) {
                 // send it back
 #ifdef DISPLAY_UPDATE
                 std::cout << "Sending response of update: if_index: " << j << std::endl;
-                for (RipEntry re : update_rip.entries) {
+                for (int k = 0; k < update_rip.numEntries; k++) {
+                  RipEntry re = update_rip.entries[k];
                   std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
                   << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
                   << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
