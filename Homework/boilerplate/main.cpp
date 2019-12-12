@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
             resp.entries[resp.numEntries].metric =
             ((ans[i]->metric & 0xff) << 24) + (((ans[i]->metric >> 8) & 0xff) << 16)
             + (((ans[i]->metric >> 16) & 0xff) << 8) + (ans[i]->metric >> 24);
-            resp.entries[resp.numEntries].nexthop = addrs[if_index]; // ori: ans[i]->nexthop
+            resp.entries[resp.numEntries].nexthop = ans[i]->nexthop; // ori: ans[i]->nexthop
             resp.numEntries++;
           }
           // assemble
@@ -413,14 +413,19 @@ int main(int argc, char *argv[]) {
               continue;
             }
             if (rip.entries[i].nexthop == 0) rip.entries[i].nexthop = src_addr;
-            else for (int j = 0; j < N_IFACE_ON_BOARD; j++) {
-              if (rip.entries[i].nexthop == addrs[j]) {
-                rip.entries[i].nexthop = 0;
-                break;
+            else {
+              bool rewrite = true;
+              for (int j = 0; j < N_IFACE_ON_BOARD; j++) {
+                if (rip.entries[i].nexthop == addrs[j]) {
+                  rip.entries[i].nexthop = 0;
+                  rewrite = false;
+                  break;
+                }
               }
+              if (rewrite) rip.entries[i].nexthop = src_addr;
             }
-            new_metric += METRIC_COST;
-            if (new_metric > METRIC_INF) new_metric = METRIC_INF;
+            if (new_metric >= METRIC_INF) new_metric = METRIC_INF;
+            else new_metric += METRIC_COST;
             uint32_t found_nexthop, found_if_index, found_metric;
             if (query(rip.entries[i].addr, &found_nexthop, &found_if_index, &found_metric)) {
               // TODO: reset timer [x]
@@ -431,7 +436,7 @@ int main(int argc, char *argv[]) {
               << ", if_index = " << found_if_index
               << ", metric = " << found_metric << std::endl;
 #endif
-              if (found_nexthop == rip.entries[i].nexthop && found_metric >= new_metric) {
+              if (found_nexthop == rip.entries[i].nexthop && new_metric != METRIC_INF) {
                 RoutingTableEntry new_entry;
                 new_entry.addr = rip.entries[i].addr;
                 new_entry.if_index = if_index;
