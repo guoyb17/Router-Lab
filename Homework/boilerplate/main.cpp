@@ -242,8 +242,9 @@ int main(int argc, char *argv[]) {
       dst_is_me = true;
     }
     // TODO: Handle rip multicast address(224.0.0.9) [x]
-    std::cout << "dst_addr = 0x" << std::ios::hex << dst_addr << std::ios::dec
-    << ", dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
+    std::cout << "dst_addr = 0x";
+    printf("%x", dst_addr);
+    std::cout << ", dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
 
     if (dst_is_me) {
       // 3a.1
