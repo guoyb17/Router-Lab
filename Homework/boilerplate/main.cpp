@@ -8,8 +8,8 @@
 #include <vector>
 #include <iostream>
 // #define DISPLAY_MULTICAST
-#define DISPLAY_REQUEST
-#define DISPLAY_RESPONSE
+// #define DISPLAY_REQUEST
+// #define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
@@ -442,12 +442,13 @@ int main(int argc, char *argv[]) {
               new_entry.addr = rip.entries[i].addr;
               new_entry.if_index = if_index;
               new_entry.metric = new_metric;
-              new_entry.nexthop = rip.entries[i].nexthop;
+              new_entry.nexthop = src_addr;
               new_entry.timestamp = HAL_GetTicks();
               for (uint32_t j = 0; j < 32; j++) {
-                  new_entry.len = j;
-                  if (((1 << j) & rip.entries[j].mask) == 0) break;
-                }
+                new_entry.len = j;
+                if (((1 << j) & rip.entries[j].mask) == 0) break;
+              }
+              std::cout << "New route: " << new_entry.addr << ' ' << new_entry.metric << std::endl;
               update(true, new_entry);
             }
           }
