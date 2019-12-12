@@ -644,9 +644,9 @@ int main(int argc, char *argv[]) {
             uint16_t cnt16 = ~cnt & 0xffff;
             output[10] = cnt16 >> 8;
             output[11] = cnt16 & 0xff;
-            std::cout << "Forward: checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
-            << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
           }
+          std::cout << "Forward: checksum = 0x" << std::ios::hex << (((output[10] << 8) + output[11]) & 0xffff) << std::ios::dec
+          << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
           HAL_SendIPPacket(dest_if, output, res, src_mac);
         } else {
           // not found
