@@ -8,7 +8,8 @@
 #include <vector>
 #include <iostream>
 // #define DISPLAY_MULTICAST
-#define DISPLAY_REQUEST
+// #define DISPLAY_REQUEST
+#define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
@@ -347,6 +348,17 @@ int main(int argc, char *argv[]) {
           }
         } else {
           std::cout << "Got a response..." << std::endl;
+#ifdef DISPLAY_RESPONSE
+          for (RipEntry re : rip.entries) {
+            std::cout << (re.addr & 0xff) << '.' << ((re.addr >> 8) & 0xff) << '.'
+            << ((re.addr >> 16) & 0xff) << '.' << ((re.addr >> 24) & 0xff) << ' '
+            << (re.mask & 0xff) << '.' << ((re.mask >> 8) & 0xff) << '.'
+            << ((re.mask >> 16) & 0xff) << '.' << ((re.mask >> 24) & 0xff) << ' '
+            << " metric = 0x" << std::ios::hex << re.metric << std::ios::dec
+            << " nexthop = " << (re.nexthop & 0xff) << '.' << ((re.nexthop >> 8) & 0xff) << '.'
+            << ((re.nexthop >> 16) & 0xff) << '.' << ((re.nexthop >> 24) & 0xff) << std::endl;
+          }
+#endif
           // 3a.2 response, ref. RFC2453 3.9.2
           // update routing table
           // new metric = MIN (metric + cost, infinity)
