@@ -419,7 +419,7 @@ int main(int argc, char *argv[]) {
                 new_entry.timestamp = HAL_GetTicks();
                 for (uint32_t j = 0; j < 32; j++) {
                   new_entry.len = j;
-                  if (((1 << j) & rip.entries[i].mask) == 0) break;
+                  if (((1 << (31 - j)) & rip.entries[i].mask) == 0) break;
                 }
                 update(new_metric != METRIC_INF, new_entry); // directly delete if INF
                 if (new_metric != METRIC_INF) {
