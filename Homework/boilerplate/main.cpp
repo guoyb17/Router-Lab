@@ -482,7 +482,9 @@ int main(int argc, char *argv[]) {
 #ifdef DISPLAY_UPDATE
               std::cout << "New route: " << new_entry.addr << ' ' << new_entry.metric
               << ' ' << new_entry.len << std::endl;
+#endif
               update(true, new_entry);
+#ifdef DISPLAY_UPDATE
               std::vector<RoutingTableEntry*> ans;
               getTable(ans);
               for (RoutingTableEntry* i : ans) {
