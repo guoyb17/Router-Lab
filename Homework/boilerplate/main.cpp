@@ -628,25 +628,25 @@ int main(int argc, char *argv[]) {
               output[12 + i] = output[16 + i];
               output[16 + i] = tmp;
             }
-          }
-          uint32_t cnt = 0;
-          output[10] = 0;
-          output[11] = 0;
-          for (uint16_t i = 0; i + 1 < 20; i += 2) {
-            uint16_t tmp = output[i];
-            tmp = tmp << 8;
-            tmp += output[i + 1];
-            cnt += tmp;
-            while (0xffff < cnt) {
-              uint16_t tmps = cnt >> 16;
-              cnt = (cnt & 0xffff) + tmps;
+            uint32_t cnt = 0;
+            output[10] = 0;
+            output[11] = 0;
+            for (uint16_t i = 0; i + 1 < 20; i += 2) {
+              uint16_t tmp = output[i];
+              tmp = tmp << 8;
+              tmp += output[i + 1];
+              cnt += tmp;
+              while (0xffff < cnt) {
+                uint16_t tmps = cnt >> 16;
+                cnt = (cnt & 0xffff) + tmps;
+              }
             }
+            uint16_t cnt16 = ~cnt & 0xffff;
+            output[10] = cnt16 >> 8;
+            output[11] = cnt16 & 0xff;
+            std::cout << "Forward: checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
+            << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
           }
-          uint16_t cnt16 = ~cnt & 0xffff;
-          output[10] = cnt16 >> 8;
-          output[11] = cnt16 & 0xff;
-          std::cout << "Forward: checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
-          << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
           HAL_SendIPPacket(dest_if, output, res, src_mac);
         } else {
           // not found
