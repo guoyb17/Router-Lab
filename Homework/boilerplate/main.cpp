@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
                 new_entry.nexthop = rip.entries[i].nexthop;
                 new_entry.timestamp = HAL_GetTicks();
                 for (new_entry.len = 0; new_entry.len < 32; new_entry.len++) {
-                  if (((1 << new_entry.len)) & rip.entries[i].mask) == 0) break;
+                  if (((1 << new_entry.len) & rip.entries[i].mask) == 0) break;
                 }
                 update(true, new_entry);
               }
