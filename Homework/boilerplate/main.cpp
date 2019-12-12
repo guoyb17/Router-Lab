@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
             resp.entries[resp.numEntries].metric =
             ((ans[i]->metric & 0xff) << 24) + (((ans[i]->metric >> 8) & 0xff) << 16)
             + (((ans[i]->metric >> 16) & 0xff) << 8) + (ans[i]->metric >> 24);
-            resp.entries[resp.numEntries].nexthop = ans[i]->nexthop;
+            resp.entries[resp.numEntries].nexthop = addrs[if_index]; // ori: ans[i]->nexthop
             resp.numEntries++;
           }
           // assemble
@@ -114,15 +114,15 @@ int main(int argc, char *argv[]) {
           output[23] = 0x08;
           // RIP
           uint32_t rip_len = assemble(&resp, &output[20 + 8]);
-          printf("rip_len = %x\n", rip_len);
+          // printf("rip_len = %x\n", rip_len);
 
           uint16_t udp_len = rip_len + 8;
-          printf("udp_len = %x\n", udp_len);
+          // printf("udp_len = %x\n", udp_len);
           output[24] = udp_len >> 8;
           output[25] = udp_len & 0xff;
 
           uint16_t ip_len = rip_len + 20 + 8;
-          printf("ip_len = %x\n", ip_len);
+          // printf("ip_len = %x\n", ip_len);
           output[2] = ip_len >> 8;
           output[3] = ip_len & 0xff;
 
