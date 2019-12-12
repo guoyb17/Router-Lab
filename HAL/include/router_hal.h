@@ -1,6 +1,6 @@
 #ifndef __ROUTER_HAL_H__
 #define __ROUTER_HAL_H__
-#define ROUTER_BACKEND_LINUX // TODO: Remove it when pushing!
+// #define ROUTER_BACKEND_LINUX // TODO: Remove it when pushing!
 #include <stdint.h>
 #include <stdlib.h>
 #ifdef ROUTER_BACKEND_LINUX
