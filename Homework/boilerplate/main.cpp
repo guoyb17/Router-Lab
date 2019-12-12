@@ -33,8 +33,8 @@ uint8_t output[2048];
 // 2: 10.0.2.1
 // 3: 10.0.3.1
 // 你可以按需进行修改，注意端序
-in_addr_t addrs[N_IFACE_ON_BOARD] = {0xc0a80302, 0xc0a80401, 0x0a000201,
-                                     0x0a000301}; // ori: 0x0100000a, 0x0101000a, 0x0102000a, 0x0103000a
+in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0203a8c0, 0x0104a8c0, 0x0102000a,
+                                     0x0103000a}; // ori: 0x0100000a, 0x0101000a, 0x0102000a, 0x0103000a
 
 int main(int argc, char *argv[]) {
   // 0a. 初始化 HAL，打开调试信息
@@ -224,9 +224,9 @@ int main(int argc, char *argv[]) {
       printf("Invalid IP Checksum\n");
       continue;
     }
-    in_addr_t src_addr = (packet[12] << 24) + (packet[13] << 16) + (packet[14] << 8) + packet[15],
-              dst_addr = (packet[16] << 24) + (packet[17] << 16) + (packet[18] << 8) + packet[19];
-    uint16_t src_port = (packet[20] << 8) + packet[21];
+    in_addr_t src_addr = (packet[15] << 24) + (packet[14] << 16) + (packet[13] << 8) + packet[12],
+              dst_addr = (packet[19] << 24) + (packet[18] << 16) + (packet[17] << 8) + packet[16];
+    uint16_t src_port = (packet[21] << 8) + packet[20];
     // TODO: extract src_addr and dst_addr from packet (big endian) [x]
     // big endian
 
