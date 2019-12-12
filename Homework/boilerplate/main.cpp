@@ -484,12 +484,12 @@ int main(int argc, char *argv[]) {
                 uint32_t rip_len = assemble(&update_rip, &output[20 + 8]);
 
                 uint16_t udp_len = rip_len + 8;
-                output[24] = udp_len >> 8;
-                output[25] = udp_len & 0xff;
+                output[24] = udp_len & 0xff;
+                output[25] = udp_len >> 8;
 
                 uint16_t ip_len = rip_len + 20 + 8;
-                output[2] = ip_len >> 8;
-                output[3] = ip_len & 0xff;
+                output[2] = ip_len & 0xff;
+                output[3] = ip_len >> 8;
 
                 // checksum calculation for ip and udp
                 // if you don't want to calculate udp checksum, set it to zero
