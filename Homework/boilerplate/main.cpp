@@ -9,7 +9,7 @@
 #include <iostream>
 // #define DISPLAY_MULTICAST
 // #define DISPLAY_REQUEST
-#define DISPLAY_RESPONSE
+// #define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
@@ -424,11 +424,13 @@ int main(int argc, char *argv[]) {
             uint32_t found_nexthop, found_if_index, found_metric;
             if (query(rip.entries[i].addr, &found_nexthop, &found_if_index, &found_metric)) {
               // TODO: reset timer [x]
+#ifdef DISPLAY_UPDATE
               std::cout << "Found: nexthop = " << (found_nexthop & 0xff) << '.'
               << ((found_nexthop >> 8) & 0xff) << '.' << ((found_nexthop >> 16) & 0xff)
               << '.' << ((found_nexthop >> 24) & 0xff)
               << ", if_index = " << found_if_index
               << ", metric = " << found_metric << std::endl;
+#endif
               if (found_nexthop == rip.entries[i].nexthop && found_metric != new_metric) {
                 RoutingTableEntry new_entry;
                 new_entry.addr = rip.entries[i].addr;
@@ -477,18 +479,20 @@ int main(int argc, char *argv[]) {
               for (new_entry.len = 0; new_entry.len < 32; new_entry.len++) {
                 if (((1 << new_entry.len) & rip.entries[i].mask) == 0) break;
               }
+#ifdef DISPLAY_UPDATE
               std::cout << "New route: " << new_entry.addr << ' ' << new_entry.metric
               << ' ' << new_entry.len << std::endl;
               update(true, new_entry);
               std::vector<RoutingTableEntry*> ans;
               getTable(ans);
               for (RoutingTableEntry* i : ans) {
-              std::cout << (i->addr & 0xff) << '.' << ((i->addr >> 8) & 0xff) << '.'
-              << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
-              << " dev " << i->if_index << " proto Router-Lab scope link"
-              << " metric " << i->metric
-              << std::endl;
-      }
+                std::cout << (i->addr & 0xff) << '.' << ((i->addr >> 8) & 0xff) << '.'
+                << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
+                << " dev " << i->if_index << " proto Router-Lab scope link"
+                << " metric " << i->metric
+                << std::endl;
+              }
+#endif
             }
           }
           // TODO: triggered updates? ref. RFC2453 3.10.1 [x]
