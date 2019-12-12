@@ -7,7 +7,7 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
-// #define DISPLAY_MULTICAST
+#define DISPLAY_MULTICAST
 // #define DISPLAY_REQUEST
 #define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
@@ -82,7 +82,9 @@ int main(int argc, char *argv[]) {
           for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
             resp.entries[resp.numEntries].addr = ans[i]->addr;
             resp.entries[resp.numEntries].mask = (1 << ans[i]->len) - 1;
-            resp.entries[resp.numEntries].metric = ans[i]->metric;
+            resp.entries[resp.numEntries].metric =
+            ((ans[i]->metric & 0xff) << 24) + (((ans[i]->metric >> 8) & 0xff) << 16)
+            + (((ans[i]->metric >> 16) & 0xff) << 8) + (ans[i]->metric >> 24);
             resp.entries[resp.numEntries].nexthop = ans[i]->nexthop;
             resp.numEntries++;
           }
@@ -268,7 +270,9 @@ int main(int argc, char *argv[]) {
             for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
               resp.entries[resp.numEntries].addr = ans[i]->addr;
               resp.entries[resp.numEntries].mask = (1 << ans[i]->len) - 1;
-              resp.entries[resp.numEntries].metric = ans[i]->metric;
+              resp.entries[resp.numEntries].metric =
+              ((ans[i]->metric & 0xff) << 24) + (((ans[i]->metric >> 8) & 0xff) << 16)
+              + (((ans[i]->metric >> 16) & 0xff) << 8) + (ans[i]->metric >> 24);
               resp.entries[resp.numEntries].nexthop = ans[i]->nexthop;
               resp.numEntries++;
             }
@@ -374,7 +378,10 @@ int main(int argc, char *argv[]) {
           // TODO: use query and update [x]
           for (uint32_t i = 0; i < rip.numEntries; i++) {
             if (!((1 <= rip.entries[i].metric && rip.entries[i].metric <= METRIC_INF))) continue;
-            uint32_t new_metric = rip.entries[i].metric + METRIC_COST;
+            uint32_t new_metric = (rip.entries[i].metric >> 24)
+            + (((rip.entries[i].metric >> 16) & 0xff) << 8)
+            + (((rip.entries[i].metric >> 8) & 0xff) << 16)
+            + ((rip.entries[i].metric & 0xff) << 24) + METRIC_COST;
             if (new_metric > METRIC_INF) new_metric = METRIC_INF;
             uint32_t found_nexthop, found_if_index, found_metric;
             if (query(rip.entries[i].addr, &found_nexthop, &found_if_index, &found_metric)) {
