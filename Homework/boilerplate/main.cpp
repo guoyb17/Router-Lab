@@ -393,14 +393,15 @@ int main(int argc, char *argv[]) {
           update_rip.numEntries = 0;
           // TODO: use query and update [x]
           for (uint32_t i = 0; i < rip.numEntries; i++) {
-            if (!((1 <= rip.entries[i].metric && rip.entries[i].metric <= METRIC_INF))) {
-              std::cout << "rip.entries[i].metric = " << rip.entries[i].metric << ", which is invalid!" << std::endl;
-              continue;
-            }
             uint32_t new_metric = (rip.entries[i].metric >> 24)
             + (((rip.entries[i].metric >> 16) & 0xff) << 8)
             + (((rip.entries[i].metric >> 8) & 0xff) << 16)
-            + ((rip.entries[i].metric & 0xff) << 24) + METRIC_COST;
+            + ((rip.entries[i].metric & 0xff) << 24);
+            if (!((1 <= new_metric && new_metric <= METRIC_INF))) {
+              std::cout << "Changed to little endian, rip.entries[i].metric = " << new_metric << ", which is invalid!" << std::endl;
+              continue;
+            }
+            new_metric += METRIC_COST;
             if (new_metric > METRIC_INF) new_metric = METRIC_INF;
             uint32_t found_nexthop, found_if_index, found_metric;
             if (query(rip.entries[i].addr, &found_nexthop, &found_if_index, &found_metric)) {
@@ -425,7 +426,10 @@ int main(int argc, char *argv[]) {
                   RipEntry tmp;
                   tmp.addr = new_entry.addr;
                   tmp.mask = rip.entries[i].mask;
-                  tmp.metric = new_metric;
+                  tmp.metric = (new_metric >> 24)
+                  + (((new_metric >> 16) & 0xff) << 8)
+                  + (((new_metric >> 8) & 0xff) << 16)
+                  + ((new_metric & 0xff) << 24);
                   tmp.nexthop = rip.entries[i].nexthop;
                   update_rip.entries[update_rip.numEntries++] = tmp;
                 }
