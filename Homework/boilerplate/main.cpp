@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
                 new_entry.nexthop = rip.entries[i].nexthop;
                 new_entry.timestamp = HAL_GetTicks();
                 for (new_entry.len = 0; new_entry.len < 32; new_entry.len++) {
-                  if (((1 << (31 - new_entry.len)) & rip.entries[j].mask) == 0) break;
+                  if (((1 << (31 - new_entry.len)) & rip.entries[new_entry.len].mask) == 0) break;
                 }
                 update(true, new_entry);
               }
@@ -468,7 +468,7 @@ int main(int argc, char *argv[]) {
               new_entry.nexthop = src_addr;
               new_entry.timestamp = HAL_GetTicks();
               for (new_entry.len = 0; new_entry.len < 32; new_entry.len++) {
-                if (((1 << (31 - new_entry.len)) & rip.entries[j].mask) == 0) break;
+                if (((1 << (31 - new_entry.len)) & rip.entries[new_entry.len].mask) == 0) break;
               }
               std::cout << "New route: " << new_entry.addr << ' ' << new_entry.metric << std::endl;
               update(true, new_entry);
