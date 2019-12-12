@@ -431,7 +431,7 @@ int main(int argc, char *argv[]) {
               << ", if_index = " << found_if_index
               << ", metric = " << found_metric << std::endl;
 #endif
-              if (found_nexthop == rip.entries[i].nexthop && found_metric != new_metric) {
+              if (found_nexthop == rip.entries[i].nexthop && found_metric <= new_metric) {
                 RoutingTableEntry new_entry;
                 new_entry.addr = rip.entries[i].addr;
                 new_entry.if_index = if_index;
