@@ -114,12 +114,15 @@ int main(int argc, char *argv[]) {
           output[23] = 0x08;
           // RIP
           uint32_t rip_len = assemble(&resp, &output[20 + 8]);
+          printf("rip_len = %x\n", rip_len);
 
           uint16_t udp_len = rip_len + 8;
+          printf("udp_len = %x\n", udp_len);
           output[24] = udp_len & 0xff;
           output[25] = udp_len >> 8;
 
           uint16_t ip_len = rip_len + 20 + 8;
+          printf("ip_len = %x\n", ip_len);
           output[2] = ip_len & 0xff;
           output[3] = ip_len >> 8;
 
