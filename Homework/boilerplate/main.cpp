@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
         .addr = addrs[i] & 0x00FFFFFF, // big endian
         .len = 24,        // small endian
         .if_index = i,    // small endian
-        .nexthop = 0,     // big endian, means direct
+        .nexthop = 0,     // big endian, 0 means direct
         .metric = 1,      // small endian
         .timestamp = HAL_GetTicks()
     };
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
           resp.numEntries = 0;
           for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
             resp.entries[resp.numEntries].addr = ans[i]->addr;
-            resp.entries[resp.numEntries].mask = (1 << (ans[i]->len + 1)) - 1;
+            resp.entries[resp.numEntries].mask = (1 << ans[i]->len) - 1;
             resp.entries[resp.numEntries].metric = ans[i]->metric;
             resp.entries[resp.numEntries].nexthop = ans[i]->nexthop;
             resp.numEntries++;
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
             resp.numEntries = 0;
             for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
               resp.entries[resp.numEntries].addr = ans[i]->addr;
-              resp.entries[resp.numEntries].mask = (1 << (ans[i]->len + 1)) - 1;
+              resp.entries[resp.numEntries].mask = (1 << ans[i]->len) - 1;
               resp.entries[resp.numEntries].metric = ans[i]->metric;
               resp.entries[resp.numEntries].nexthop = ans[i]->nexthop;
               resp.numEntries++;
@@ -366,7 +366,6 @@ int main(int argc, char *argv[]) {
           // update metric, if_index, nexthop
           // what is missing from RoutingTableEntry? metric, timestamp
           // TODO: update routing table [x]
-          // TODO: handle nexthop = 0 case [ ]
           // HINT: what is missing from RoutingTableEntry?
           // you might want to use `query` and `update` but beware of the difference between exact match and longest prefix match
           RipPacket update_rip;
