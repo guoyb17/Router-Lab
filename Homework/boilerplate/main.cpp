@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
+#include <iostream>
+#include "standard.h"
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern void update(bool insert, RoutingTableEntry entry);
@@ -62,6 +64,7 @@ int main(int argc, char *argv[]) {
     uint64_t time = HAL_GetTicks();
     if (time > last_time + 30 * 1000) {
       // TODO: What to do? [x]
+      // TODO: split horizon [ ]
       std::vector<RoutingTableEntry*> ans;
       getTable(ans);
       int k_total = ans.size() / RIP_MAX_ENTRY;
@@ -152,6 +155,13 @@ int main(int argc, char *argv[]) {
       }
       // 例如：超时？发 RIP Request/Response？
       printf("30s Timer\n");
+      std::vector<RoutingTableEntry*> ans;
+      getTable(ans);
+      for (RoutingTableEntry* i : ans) {
+        std::cout << (i->addr & 0xff) << '.' << ((i->addr >> 8) & 0xff) << '.'
+        << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
+        << " dev " << interfaces[i->if_index] << " proto Router-Lab scope link" << std::endl;
+      }
       last_time = time;
     }
 
@@ -228,6 +238,7 @@ int main(int argc, char *argv[]) {
           // 3a.3 request, ref. RFC2453 3.9.1
           // only need to respond to whole table requests in the lab
           // TODO: fill resp [x]
+          // TODO: split horizon [ ]
           std::vector<RoutingTableEntry*> ans;
           getTable(ans);
           int k_total = ans.size() / RIP_MAX_ENTRY;
@@ -372,6 +383,7 @@ int main(int argc, char *argv[]) {
             }
           }
           // TODO: triggered updates? ref. RFC2453 3.10.1 [x]
+          // TODO: split horizon [ ]
           if (update_rip.numEntries > 0) {
             for (uint32_t j = 0; j < N_IFACE_ON_BOARD; j++) {
               if (j != if_index) {
