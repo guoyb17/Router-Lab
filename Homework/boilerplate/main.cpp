@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
         std::cout << (i->addr & 0xff) << '.' << ((i->addr >> 8) & 0xff) << '.'
         << ((i->addr >> 16) & 0xff) << '.' << ((i->addr >> 24) & 0xff) << '/' << i->len
         << " dev " << i->if_index << " proto Router-Lab scope link"
-        << " metric " << i->metric
+        // << " metric " << i->metric
         << std::endl;
       }
       // TODO: print complete routing table to stdout/stderr [x]
@@ -604,10 +604,10 @@ int main(int argc, char *argv[]) {
           // found
           memcpy(output, packet, res);
           // update ttl and checksum
-          if (!forward(output, res)) std::cout << "forward return false!" << std::endl;
+          forward(output, res)；
           // TODO: check ttl=0 case [x]
           if (output[8] == 0) {
-            std::cout << "ttl = 0! Time exceed!" << std::endl;
+            // std::cout << "ttl = 0! Time exceed!" << std::endl;
             output[20] = 11;
             output[21] = 0;
             // TODO: checksum of ICMP: output 22, 23 [x]
@@ -646,8 +646,8 @@ int main(int argc, char *argv[]) {
             output[10] = cnt16 >> 8;
             output[11] = cnt16 & 0xff;
           }
-          std::cout << "Forward: checksum = 0x" << std::ios::hex << (((output[10] << 8) + output[11]) & 0xffff) << std::ios::dec
-          << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
+          // std::cout << "Forward: checksum = 0x" << std::ios::hex << (((output[10] << 8) + output[11]) & 0xffff) << std::ios::dec
+          // << ", it's " << (validateIPChecksum(output, res) ? "true." : "false.") << std::endl;
           HAL_SendIPPacket(dest_if, output, res, dest_mac);
         } else {
           // not found
