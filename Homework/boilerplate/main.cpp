@@ -349,8 +349,8 @@ int main(int argc, char *argv[]) {
               }
             }
             cnt = ~cnt & 0xffff;
-            output[10] = cnt & 0xff;
-            output[11] = (cnt >> 8) & 0xff;
+            output[10] = (cnt >> 8) & 0xff;
+            output[11] = cnt & 0xff;
             // send it back
 #ifdef DISPLAY_REQUEST
             std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
@@ -561,8 +561,8 @@ int main(int argc, char *argv[]) {
                   }
                 }
                 cnt = ~cnt & 0xffff;
-                output[10] = cnt & 0xff;
-                output[11] = (cnt >> 8) & 0xff;
+                output[10] = (cnt >> 8) & 0xff;
+                output[11] = cnt & 0xff;
                 // send it back
 #ifdef DISPLAY_UPDATE
                 std::cout << "checksum = 0x" << std::ios::hex << (cnt & 0xffff) << std::ios::dec
