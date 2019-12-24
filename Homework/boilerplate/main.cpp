@@ -11,7 +11,7 @@
 // #define DISPLAY_REQUEST
 // #define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
-#define GROUP_DEBUG
+// #define GROUP_DEBUG
 #ifdef GROUP_DEBUG
 uint64_t frame_cnt;
 #endif
