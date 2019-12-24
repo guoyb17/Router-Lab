@@ -1,6 +1,6 @@
 # Router-Lab
 
-最后更新：2019/12/19 12:00 a.m.
+最后更新：2019/12/24 3:40 p.m.
 
 <details>
     <summary> 目录 </summary>
@@ -258,7 +258,7 @@ R3:
 * R2 向 R1、R3 发出的 RIP 协议报文是否正确：包括是否响应了请求，以及是否实现了水平分裂（split horizon）算法，在 R1 和 R3 上用 Wireshark 抓包检查
 * R2 上的 RIP 路由表、转发表是否正确：需要你定期或者每次收到报文时打印最新的 RIP 路由表、系统转发表（见 FAQ 中对于路由表和转发表的讨论），格式自定，可以模仿 `ip route` 的输出格式
 
-在 `Setup` 目录下存放了验收时在 R1 和 R3 上配置的脚本，还有恢复它的改动的脚本，注意它采用了树莓派中管理网络的 dhcpcd 进行地址的配置，所以可能不适用于树莓派以外的环境。如果运行过配置脚本，请在验收前恢复它的改动，运行恢复脚本即可。简单起见，它采用了 netns 来模拟 PC1 和 PC2，这样只需要两个树莓派就可以进行联调和验收。
+在 `Setup` 目录下存放了验收时在 R1 和 R3 上配置的脚本，还有恢复它的改动的脚本，注意它采用了树莓派中管理网络的 dhcpcd 进行地址的配置，所以可能不适用于树莓派以外的环境。如果运行过配置脚本，请在验收前恢复它的改动，运行恢复脚本即可，也可以手动删除 `/etc/dhcpcd.conf` 最后的几行内容然后用 `sudo systemctl restart dhcpcd` 来重启 dhcpcd。简单起见，它采用了 netns 来模拟 PC1 和 PC2，这样只需要两个树莓派就可以进行联调和验收。
 
 <details>
     <summary>为何不在 R2 上配置 IP 地址：192.168.3.2 和 192.168.4.1 </summary>
@@ -344,7 +344,22 @@ R3:
 
 ### 实验第三部分
 
-第三部分是针对组队的测试，一个组一般是三个人，网络拓扑与单人测试相同，只不过此时 R1、R2、R3 分别是三位同学的树莓派，我们会在验收前几天的某一时刻随机定下每组中哪一位同学分别对应 R1 R2 R3 的哪一个，所以同学们在测试的时候尽量测试各种组合。在这个环节中，只通过 `ping` 检查连通性，PC1 和 PC2 可以正常互通即可。请注意，在实验中第三部分，在 PC1 R1 R2 R3 PC2 上都不需要运行 BIRD（如果安装了 BIRD 可以运行 `sudo systemctl disable --now bird` 以禁用 BIRD），也不需要打开 Linux 的转发功能。
+第三部分是针对组队的测试，一个组一般是三个人，网络拓扑与单人测试相同，只不过此时 R1、R2、R3 分别是三位同学的树莓派，我们会在验收前几天的某一时刻随机定下每组中哪一位同学分别对应 R1 R2 R3 的哪一个，所以同学们在测试的时候尽量测试各种组合。请注意，在实验中第三部分，在 PC1 R1 R2 R3 PC2 上都不需要运行 BIRD（如果安装了 BIRD 可以运行 `sudo systemctl disable --now bird` 以禁用 BIRD），也不需要打开 Linux 的转发功能。
+
+测试方法（2019.12.20 更新，同学可以选择跳过部分选项，满足部分即可拿到满分，超过满分部分舍去）：
+
+1. 稳定性（15%）：对于下面的测试过程（3-9），如果测试过程中程序没有崩溃，即使没有通过测试，也可以得到每个测试 3% 的分数，15% 封顶
+2. 协议基本实现（10%）：R1 可以学到 192.168.5.0/24 的路由，R3 可以学到 192.168.1.0/24 的路由，通过程序输出判断
+3. 连通性（10%）：从 PC1 可以 ping 通 PC2
+4. 连通延迟（10%）：在连通的基础上，在 PC1 上 ping PC2 的地址， 5s 取延迟的平均值，得到的百分比分值为 10*exp(-t/100) % ，其中 t 单位为 ms
+5. 单连接单工大包（30%）：在 PC2 运行 `iperf3 -s`，在 PC1 运行 `iperf3 -c 192.168.5.1`，默认参数运行，得到的百分比分值为 30*(1-exp(-s/20)) % ，其中 s 单位为 Mbps
+6. 单链接单工小包（30%）：在 PC2 运行 `iperf3 -s`，在 PC1 运行 `iperf3 -c 192.168.5.1 -u -l 16 -t 5 -b 1G`，在 PC2 计算 0.00-5.00 秒总共的 `(Total Datagrams - Lost) / 5s` ，得到的百分比分值为 30*(1-exp(-s/10)) % ，其中 s 单位为 Kilopackets / s
+7. 小规模路由表压力测试（20%）：在 PC1 上开启 bird，配置 192.168.10.0/24 ~ 192.168.255.0/24 共 246 条新的路由，从 PC2 ping 192.168.10.1 （10%）和 192.168.255.1（10%），可以在 PC1 上抓到包
+8. 中等规模路由表压力测试（30%）：在 PC1 上开启 bird，10.0.0.0/24 ~ 10.8.255.0/24 共 2048 条新路由，从 PC2 ping 10.1.2.3（15%） 和 10.8.7.6（15%），可以在 PC1 上抓到包
+9. 较大规模路由表压力测试（45%）：在 R1 上配置 AS4538 的所有 IPv4 路由（约 5000 条），从 PC2 ping 166.111.4.100 （15%）、101.6.4.100 （15%）和 59.66.134.1（15%），可以在 PC1 上抓到包
+10. 其他扩展功能：经助教和老师同意可以获得每项不高于 10% 的分数
+
+为了方便理解，你可以打开 `score.xlsx` 并在里面填入你的数据以计算出你能得到的分数。
 
 PC1 和 PC2 的路由：
 
@@ -359,9 +374,20 @@ PC2:
 
 初始情况下 R1 R2 R3 都只有对应的直连路由，只有在正确地运行 RIP 协议后，才能从 PC1 ping 通 PC2 。
 
-验收的时候下，由于 PC1 和 PC2 只连接一个 USB 网卡，所以上面的 pc1r1 和 pc2r3 都是 eth1 。同学自由选择 R2 上两个 USB 网卡的插入顺序，但在 R1 上先插到 R2 的 USB 网卡，即 eth1 ，再插到 PC1 的 USB 网卡，即 eth2，在 R3 也是先插到 R2 的网卡，即 eth1 ，再插到 PC2 的 USB 网卡，即 eth2。
+验收的时候下，由于 PC1 和 PC2 只连接一个 USB 网卡，所以上面的 pc1r1 和 pc2r3 都是 eth1 。同学自由选择 R2 上两个 USB 网卡的插入顺序，但在 R1 上先插到 R2 的 USB 网卡，即 eth1 ，再插到 PC1 的 USB 网卡，即 eth2，在 R3 也是先插到 R2 的网卡，即 eth1 ，再插到 PC2 的 USB 网卡，即 eth2。这样规定的目的是方便替换 PC1/2 的设备，在验收的时候可以从同学自己的电脑直接换成树莓派。
 
-同学在自己测试时，PC1 和 PC2 可以用自己的笔记本电脑，按照上面要求配置两条路由即可测试。配置静态路由的方法参考：[Windows](https://tekbloq.com/2018/10/24/how-to-add-a-static-route-to-the-windows-routing-table/) [macOS](https://blog.remibergsma.com/2012/03/04/howto-quickly-add-a-route-in-mac-osx/) [Linux](https://www.cyberciti.biz/faq/linux-route-add/) 。一般来说，在配置 IP 地址和子网掩码的时候直连路由自动就添加好了，只需要在 PC1 上添加 192.168.5.0/24 via 192.168.1.1 和在 PC2 上添加 192.168.1.0/24 via 192.168.5.2 即可。
+同学在自己测试时，PC1 和 PC2 可以用自己的笔记本电脑，按照上面要求配置两条路由即可测试。配置静态路由的方法参考：[Windows](https://tekbloq.com/2018/10/24/how-to-add-a-static-route-to-the-windows-routing-table/) [macOS](https://blog.remibergsma.com/2012/03/04/howto-quickly-add-a-route-in-mac-osx/) [Linux](https://www.cyberciti.biz/faq/linux-route-add/) 。一般来说，在配置 IP 地址和子网掩码的时候直连路由自动就添加好了，只需要在 PC1 上添加 192.168.5.0/24 via 192.168.1.1 和在 PC2 上添加 192.168.1.0/24 via 192.168.5.2 即可。具体到 Linux 的命令，就是（假如 USB 网卡是 eth1）：
+
+```
+PC1:
+ip a add 192.168.1.2/24 dev eth1
+ip r add 192.168.5.0/24 via 192.168.1.1 dev eth1
+PC2:
+ip a add 192.168.5.1/24 dev eth1
+ip r add 192.168.1.0/24 via 192.168.5.2 dev eth1
+```
+
+对于路由表的压力测试，可以在 PC1 上使用 `Setup/bird1.conf` 覆盖 `/etc/bird/bird.conf` ，然后用 `sudo systemctl restart bird` 来启动 BIRD，如果你在 netns 中或者非树莓派的环境使用，可能需要修改 `Setup/bird1.conf` 和 `Setup/conf-part{7,8,9}.conf` 相关的网卡名字。这个配置文件中有三个 part，分别对应上面流程中的 7 8 9 三步，可以通过 `sudo birdc disable part7` 和 `sudo birdc enable part7` 来启用/禁用某一组路由表，路由表的具体内容见 `conf-part{7,8,9}.conf` 文件。想要查看 BIRD 是否配置正确，可以运行 `sudo birdc show route` 来查看 BIRD 的完整路由表。
 
 容易出错的地方：
 
@@ -371,8 +397,21 @@ PC2:
 4. 直连路由配置不正确
 5. PC1 和 PC2 配置不正确，ICMP 包根本没有发给 R1 和 R3
 6. Windows 默认不响应 ICMP Echo Request，[解决方法](https://kb.iu.edu/d/aopy)
+7. BIRD 配置不正确，如网卡名称和实际情况对不上
 
-如果想尝试更加复杂的网络拓扑，同学可以选择在 R1 和 R3 直接再连一条线（组成了环形网络，配置的 IP 地址自定），如果在这种情况下仍然可以实现 PC1 和 PC2 的连通，可以得到一定的加分。
+提升转发性能的方法：
+
+1. 去掉转发时的调试输出
+2. 增量更新 Checksum
+3. 优化路由表查询算法
+
+支持较大路由表的方法：
+
+1. 发送 RIP Response 时按照 25 条为一组进行切分
+2. 完善路由表更新算法
+3. 完善路由表查询算法
+
+如果想尝试更加复杂的网络拓扑，同学可以选择在 R1 和 R3 直接再连一条线（组成了环形网络，配置的 IP 地址自定），如果在这种情况下仍然可以实现 PC1 和 PC2 的连通，可以得到一定的加分，加分方法参考上面测试方法的最后一点。
 
 ## 建议的实验思路
 
@@ -549,6 +588,12 @@ protocol rip {
 启动服务（如 `systemctl start bird`）后，你就可以开始抓包，同时查看 bird 打出的信息（`journalctl -f -u bird`），这对调试你的路由器实现很有帮助。
 
 你也可以直接运行 BIRD（`bird -c /etc/bird.conf`），可在命令选项中加上 `-d` 把程序放到前台，方便直接退出进程。若想同时开多个 BIRD，则需要给每个进程指定单独的 PID 文件和 socket，如 `bird -d -c bird1.conf -P bird1.pid -s bird1.socket` 。
+
+在安装 BIRD（`sudo apt install bird`）之后，它默认是已经启动并且开机自启动。如果要启动 BIRD，运行 `sudo systemctl start bird`；停止 BIRD： `sudo systemctl stop bird`；重启 BIRD：`sudo systemctl restart bird`；打开开机自启动：`sudo systemctl enable bird`；关闭开机自启动：`sudo systemctl disable bird`。
+
+配合 BIRD 使用的还有它的客户端程序 `birdc`，它可以连接到 BIRD 服务并且控制它的行为。默认情况下 birdc 会连接系统服务（systemctl 启动）的 BIRD，如果启动 BIRD 时采用了 `-s` 参数，那么 birdc 也要指定同样的 socket 路径。
+
+对于一条静态路由（如 `route 1.2.3.0/24 via "abcd"`），它只有在 `abcd` 处于 UP 状态时才会生效，如果你只是想让 BIRD 向外宣告这一条路由，可以用 `lo` （本地环回）代替 `abcd` 并且运行 `ip l set lo up`。你可以用 `birdc show route` 来确认这件事情。
 
 ### 如何在一台计算机上进行真实测试
 
