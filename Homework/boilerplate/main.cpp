@@ -11,6 +11,10 @@
 // #define DISPLAY_REQUEST
 // #define DISPLAY_RESPONSE
 // #define DISPLAY_UPDATE
+#define GROUP_DEBUG
+#ifdef GROUP_DEBUG
+uint64_t frame_cnt;
+#endif
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern void update(bool insert, RoutingTableEntry entry);
@@ -42,6 +46,10 @@ int main(int argc, char *argv[]) {
   if (res < 0) {
     return res;
   }
+
+#ifdef GROUP_DEBUG
+  frame_cnt = 0;
+#endif
 
   // 0b. Add direct routes 创建若干条 /24 直连路由
   // For example:
@@ -245,6 +253,14 @@ int main(int argc, char *argv[]) {
     // TODO: extract src_addr and dst_addr from packet (big endian) [x]
     // big endian
 
+#ifdef GROUP_DEBUG
+    std::cout << "Received packet: Frame #" << frame_cnt++ << ", \nsrc: "
+    << (src_addr & 0xff) << '.' << ((src_addr >> 8) & 0xff) << '.'
+    << ((src_addr >> 16) & 0xff) << '.' << ((src_addr >> 24) & 0xff) << ", dst: "
+    << (dst_addr & 0xff) << '.' << ((dst_addr >> 8) & 0xff) << '.'
+    << ((dst_addr >> 16) & 0xff) << '.' << ((dst_addr >> 24) & 0xff) << std::endl;
+#endif
+
     // 2. check whether dst is me
     bool dst_is_me = false;
     for (int i = 0; i < N_IFACE_ON_BOARD; i++) {
@@ -257,9 +273,9 @@ int main(int argc, char *argv[]) {
       dst_is_me = true;
     }
     // TODO: Handle rip multicast address(224.0.0.9) [x]
-    // std::cout << "dst_addr = 0x";
-    // printf("%x", dst_addr);
-    // std::cout << ", dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
+#ifdef GROUP_DEBUG
+    std::cout << "dst_is_me = " << (dst_is_me ? "true" : "false") << std::endl;
+#endif
 
     if (dst_is_me) {
       // 3a.1
@@ -272,6 +288,9 @@ int main(int argc, char *argv[]) {
           // only need to respond to whole table requests in the lab
           // TODO: fill resp [x]
           // TODO: split horizon [ ]
+#ifdef GROUP_DEBUG
+          std::cout << "This is a RIP request." << std::endl;
+#endif
           std::vector<RoutingTableEntry*> ans;
           getTable(ans);
           int k_total = ans.size() / RIP_MAX_ENTRY;
@@ -280,7 +299,8 @@ int main(int argc, char *argv[]) {
             RipPacket resp;
             resp.command = 2;
             resp.numEntries = 0;
-            for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size()); i++) {
+            for (int i = 0; (i < RIP_MAX_ENTRY) && (k * RIP_MAX_ENTRY + i < ans.size())
+            && ans[i]->if_index != if_index; i++) {
               resp.entries[resp.numEntries].addr = ans[i]->addr;
               resp.entries[resp.numEntries].mask = (1 << ans[i]->len) - 1;
               resp.entries[resp.numEntries].metric =
@@ -373,6 +393,9 @@ int main(int argc, char *argv[]) {
             HAL_SendIPPacket(if_index, output, ip_len, src_mac);
           }
         } else {
+#ifdef GROUP_DEBUG
+          std::cout << "This is a RIP response." << std::endl;
+#endif
 #ifdef DISPLAY_RESPONSE
           std::cout << "Got a response from "
           << (src_addr & 0xff) << '.' << ((src_addr >> 8) & 0xff) << '.'
@@ -607,7 +630,9 @@ int main(int argc, char *argv[]) {
           forward(output, res);
           // TODO: check ttl=0 case [x]
           if (output[8] == 0) {
-            // std::cout << "ttl = 0! Time exceed!" << std::endl;
+#ifdef GROUP_DEBUG
+            std::cout << "ttl = 0! Time exceed!" << std::endl;
+#endif
             output[20] = 11;
             output[21] = 0;
             // TODO: checksum of ICMP: output 22, 23 [x]
