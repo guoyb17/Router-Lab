@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     if (time > last_time + 30 * 1000) {
       // TODO: send complete routing table to every interface [x]
       // ref. RFC2453 Section 3.8
-      // TODO: split horizon [ ]
+      // TODO: split horizon [x]
       std::vector<RoutingTableEntry*> ans;
       getTable(ans);
       int k_total = ans.size() / RIP_MAX_ENTRY;
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
           // 3a.3 request, ref. RFC2453 3.9.1
           // only need to respond to whole table requests in the lab
           // TODO: fill resp [x]
-          // TODO: split horizon [ ]
+          // TODO: split horizon [x]
 #ifdef GROUP_DEBUG
           std::cout << "This is a RIP request." << std::endl;
 #endif
@@ -432,7 +432,9 @@ int main(int argc, char *argv[]) {
             + (((rip.entries[i].metric >> 8) & 0xff) << 16)
             + ((rip.entries[i].metric & 0xff) << 24);
             if (!((1 <= new_metric && new_metric <= METRIC_INF))) {
+#ifdef GROUP_DEBUG
               std::cout << "Changed to little endian, rip.entries[i].metric = " << new_metric << ", which is invalid!" << std::endl;
+#endif
               continue;
             }
             rip.entries[i].nexthop = src_addr;
@@ -526,7 +528,7 @@ int main(int argc, char *argv[]) {
             }
           }
           // TODO: triggered updates? ref. RFC2453 3.10.1 [x]
-          // TODO: split horizon [ ]
+          // TODO: split horizon [x]
           if (update_rip.numEntries > 0) {
             for (uint32_t j = 0; j < N_IFACE_ON_BOARD; j++) {
               if (j != if_index) {
